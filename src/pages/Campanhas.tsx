@@ -28,13 +28,17 @@ const Campanhas = () => {
   const loadCampaigns = async () => {
     setLoading(true)
     try {
-      // For demo purposes, we'll use mock data since we can't directly access Facebook API from frontend
-      const mockCampaigns = await facebookAPI.getCampaigns('act_demo_account')
-      setCampaigns(mockCampaigns)
+      const campaignData = await facebookAPI.getCampaigns()
+      setCampaigns(campaignData)
+      
+      toast({
+        title: "Campanhas carregadas",
+        description: `${campaignData.length} campanhas encontradas do Facebook Ads.`
+      })
     } catch (error) {
       toast({
         title: "Erro ao carregar campanhas",
-        description: "Não foi possível conectar com o Facebook Ads. Mostrando dados demonstrativos.",
+        description: "Não foi possível conectar com o Facebook Ads. Verifique o token de acesso.",
         variant: "destructive"
       })
     } finally {

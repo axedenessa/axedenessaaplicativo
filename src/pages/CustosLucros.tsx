@@ -55,10 +55,11 @@ const CustosLucros = () => {
 
   const loadCampaigns = async () => {
     try {
-      const mockCampaigns = await facebookAPI.getCampaigns('act_demo_account')
-      setCampaigns(mockCampaigns)
+      const campaignData = await facebookAPI.getCampaigns()
+      setCampaigns(campaignData)
     } catch (error) {
       console.error('Error loading campaigns:', error)
+      setCampaigns([]) // Clear campaigns on error
     }
   }
 

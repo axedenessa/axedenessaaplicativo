@@ -27,11 +27,20 @@ class FacebookAPI {
     }
   }
 
-  async getCampaigns(adAccountId: string, dateRange: { since: string, until: string } = { 
+  async getCampaigns(adAccountId?: string, dateRange: { since: string, until: string } = { 
     since: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     until: new Date().toISOString().split('T')[0]
   }): Promise<FacebookCampaign[]> {
     try {
+      // First get ad accounts if no account ID provided
+      if (!adAccountId) {
+        const accounts = await this.getAdAccounts()
+        if (accounts.length === 0) {
+          throw new Error('No ad accounts found')
+        }
+        adAccountId = accounts[0].id
+      }
+
       const fields = [
         'campaign_name',
         'spend',
@@ -80,68 +89,10 @@ class FacebookAPI {
       }))
     } catch (error) {
       console.error('Error fetching campaigns:', error)
-      
-      // Return mock data for development
-      return this.getMockCampaigns()
+      throw error
     }
   }
 
-  private getMockCampaigns(): FacebookCampaign[] {
-    return [
-      {
-        id: '1',
-        name: 'Campanha Storie 25-08',
-        spend: 150.00,
-        results: 25,
-        reach: 5000,
-        impressions: 8500,
-        cpm: 17.65,
-        cpc: 6.00,
-        ctr: 2.94,
-        date_start: '2024-08-25',
-        date_stop: '2024-08-31'
-      },
-      {
-        id: '2',
-        name: 'Tarot Consultas - Setembro',
-        spend: 300.00,
-        results: 45,
-        reach: 8200,
-        impressions: 12000,
-        cpm: 25.00,
-        cpc: 6.67,
-        ctr: 3.75,
-        date_start: '2024-09-01',
-        date_stop: '2024-09-30'
-      },
-      {
-        id: '3',
-        name: 'Promoção Mandala Amorosa',
-        spend: 80.00,
-        results: 12,
-        reach: 2500,
-        impressions: 4200,
-        cpm: 19.05,
-        cpc: 6.67,
-        ctr: 2.86,
-        date_start: '2024-08-15',
-        date_stop: '2024-08-20'
-      },
-      {
-        id: '4',
-        name: 'Espiada no Ex - Especial',
-        spend: 220.00,
-        results: 35,
-        reach: 6800,
-        impressions: 10500,
-        cpm: 20.95,
-        cpc: 6.29,
-        ctr: 3.33,
-        date_start: '2024-08-10',
-        date_stop: '2024-08-25'
-      }
-    ]
-  }
 
   async getCampaignROAS(campaignName: string, totalRevenue: number): Promise<{ spend: number, revenue: number, roas: number }> {
     // This would ideally get the actual spend from Facebook API
