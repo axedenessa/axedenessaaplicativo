@@ -32,14 +32,8 @@ class FacebookAPI {
     until: new Date().toISOString().split('T')[0]
   }): Promise<FacebookCampaign[]> {
     try {
-      // First get ad accounts if no account ID provided
-      if (!adAccountId) {
-        const accounts = await this.getAdAccounts()
-        if (accounts.length === 0) {
-          throw new Error('No ad accounts found')
-        }
-        adAccountId = accounts[0].id
-      }
+      // Use the specific account ID provided by the user
+      const accountId = adAccountId || 'act_776827264799644'
 
       const fields = [
         'campaign_name',
@@ -65,7 +59,7 @@ class FacebookAPI {
       })
 
       const response = await fetch(
-        `https://graph.facebook.com/v18.0/${adAccountId}/insights?${params}`
+        `https://graph.facebook.com/v18.0/${accountId}/insights?${params}`
       )
       
       const data = await response.json()

@@ -26,6 +26,13 @@ const CustosLucros = () => {
     return unsubscribe
   }, [])
 
+  // Reload campaigns when date range changes
+  useEffect(() => {
+    if (startDate && endDate) {
+      loadCampaigns()
+    }
+  }, [startDate, endDate])
+
   // Set default dates based on period
   useEffect(() => {
     const today = new Date()
@@ -55,7 +62,17 @@ const CustosLucros = () => {
 
   const loadCampaigns = async () => {
     try {
-      const campaignData = await facebookAPI.getCampaigns()
+      let dateRange = { 
+        since: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        until: new Date().toISOString().split('T')[0]
+      }
+      
+      // Use filtered date range if available
+      if (startDate && endDate) {
+        dateRange = { since: startDate, until: endDate }
+      }
+      
+      const campaignData = await facebookAPI.getCampaigns('act_776827264799644', dateRange)
       setCampaigns(campaignData)
     } catch (error) {
       console.error('Error loading campaigns:', error)
@@ -88,10 +105,10 @@ const CustosLucros = () => {
   // Calculate financial metrics
   const totalRevenue = filteredGames.reduce((sum, game) => sum + game.value, 0)
 
-  // Calculate commission for Alana (50% of her games)
+  // Calculate commission for Alana (50% of her games - already comes with 50% value)
   const alanaCommission = filteredGames
     .filter(game => game.cartomante.name === 'Alana Cerqueira')
-    .reduce((sum, game) => sum + (game.value * 0.5), 0)
+    .reduce((sum, game) => sum + game.value, 0)
 
   // Calculate Facebook Ads spend
   const totalAdSpend = campaigns.reduce((sum, campaign) => sum + campaign.spend, 0)

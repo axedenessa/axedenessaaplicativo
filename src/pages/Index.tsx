@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import { gameStore } from "@/lib/gameStore"
 import { Game, CARTOMANTES } from "@/lib/types"
 import { useToast } from "@/hooks/use-toast"
+import { toZonedTime, format } from 'date-fns-tz'
+import { addMinutes } from 'date-fns'
 
 const Index = () => {
   const [games, setGames] = useState<Game[]>([])
@@ -75,17 +77,28 @@ const Index = () => {
     return `${minutes}min`
   }
 
+  const getEstimatedServiceTime = (gameId: string) => {
+    const waitMinutes = gameStore.getEstimatedWaitTime(gameId)
+    const now = new Date()
+    const estimatedTime = addMinutes(now, waitMinutes)
+    
+    // Convert to São Paulo timezone
+    const saoPauloTime = toZonedTime(estimatedTime, 'America/Sao_Paulo')
+    
+    return format(saoPauloTime, 'HH:mm', { timeZone: 'America/Sao_Paulo' })
+  }
+
   const formatGameDuration = (startTime?: string) => {
     if (!startTime) return "00:00"
     
     const start = new Date(startTime)
     const now = new Date()
-    const diff = Math.floor((now.getTime() - start.getTime()) / 1000 / 60)
+    const diffSeconds = Math.floor((now.getTime() - start.getTime()) / 1000)
     
-    const hours = Math.floor(diff / 60)
-    const minutes = diff % 60
+    const minutes = Math.floor(diffSeconds / 60)
+    const seconds = diffSeconds % 60
     
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
   }
 
   return (
@@ -219,12 +232,12 @@ const Index = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium">Tempo estimado</p>
-                    <p className="text-sm text-muted-foreground">
-                      {getWaitTimeDisplay(game.id)}
-                    </p>
-                  </div>
+                   <div className="text-right">
+                     <p className="text-sm font-medium">Tempo estimado: {getWaitTimeDisplay(game.id)}</p>
+                     <p className="text-sm text-muted-foreground">
+                       Atendimento às ~{getEstimatedServiceTime(game.id)}
+                     </p>
+                   </div>
                 </div>
               ))}
             </div>
