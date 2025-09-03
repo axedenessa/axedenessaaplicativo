@@ -95,6 +95,7 @@ export type Database = {
           game_type: Database["public"]["Enums"]["game_type"]
           id: string
           payment_time: string
+          queue_position: number | null
           started_at: string | null
           status: Database["public"]["Enums"]["game_status"]
           updated_at: string
@@ -111,6 +112,7 @@ export type Database = {
           game_type: Database["public"]["Enums"]["game_type"]
           id?: string
           payment_time: string
+          queue_position?: number | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["game_status"]
           updated_at?: string
@@ -127,6 +129,7 @@ export type Database = {
           game_type?: Database["public"]["Enums"]["game_type"]
           id?: string
           payment_time?: string
+          queue_position?: number | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["game_status"]
           updated_at?: string
