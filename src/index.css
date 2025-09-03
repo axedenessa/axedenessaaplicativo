@@ -11,7 +11,6 @@ All colors MUST be HSL.
     /* Axe de Nessa Brand Colors */
     --brand-dark: 0 0% 10%;           /* #191919 */
     --brand-purple: 261 87% 64%;      /* #9a53f4 */
-    --brand-pink: 339 87% 64%;        /* #f45395 */
     --brand-light: 60 20% 97%;        /* #f8f8f0 */
     
     /* System Colors - Dark Theme */
@@ -33,7 +32,7 @@ All colors MUST be HSL.
     --muted: 0 0% 15%;
     --muted-foreground: 0 0% 65%;
 
-    --accent: var(--brand-pink);
+    --accent: var(--brand-purple);
     --accent-foreground: var(--brand-light);
 
     --destructive: 0 84% 60%;
@@ -55,8 +54,8 @@ All colors MUST be HSL.
     --sidebar-border: 0 0% 20%;
     --sidebar-ring: var(--brand-purple);
     
-    /* Custom Gradients */
-    --gradient-brand: linear-gradient(135deg, hsl(var(--brand-purple)), hsl(var(--brand-pink)));
+    /* Custom Colors - Pure Purple Theme */
+    --gradient-brand: hsl(var(--brand-purple));
     --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(0 0% 8%));
     
     /* Shadows */

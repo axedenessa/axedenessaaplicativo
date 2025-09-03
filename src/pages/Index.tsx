@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Clock, Play, CheckCircle, Users } from "lucide-react"
+import { Clock, Play, CheckCircle, Users, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -8,9 +8,13 @@ import { Game, CARTOMANTES } from "@/lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { toZonedTime, format } from 'date-fns-tz'
 import { addMinutes } from 'date-fns'
+import { useRealTimeTimer } from '@/hooks/useRealTimeTimer'
+import { QueueManager } from '@/components/QueueManager'
+import { RealTimeGameTimer } from '@/components/RealTimeGameTimer'
 
 const Index = () => {
   const [games, setGames] = useState<Game[]>([])
+  const [showQueueManager, setShowQueueManager] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -88,24 +92,13 @@ const Index = () => {
     return format(saoPauloTime, 'HH:mm', { timeZone: 'America/Sao_Paulo' })
   }
 
-  const formatGameDuration = (startTime?: string) => {
-    if (!startTime) return "00:00"
-    
-    const start = new Date(startTime)
-    const now = new Date()
-    const diffSeconds = Math.floor((now.getTime() - start.getTime()) / 1000)
-    
-    const minutes = Math.floor(diffSeconds / 60)
-    const seconds = diffSeconds % 60
-    
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-  }
+  // Removed - now using real-time hook
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold gradient-brand bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-primary">
             Dashboard Principal
           </h1>
           <p className="text-muted-foreground">
@@ -125,6 +118,14 @@ const Index = () => {
               {todayFinished.length} finalizados hoje
             </span>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowQueueManager(!showQueueManager)}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Gerenciar Fila
+          </Button>
         </div>
       </div>
 
@@ -156,10 +157,7 @@ const Index = () => {
                         <p className="font-semibold">{activeGame.clientName}</p>
                         <p className="text-sm text-muted-foreground">{activeGame.gameType.name}</p>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Clock className="h-4 w-4 text-primary" />
-                        <span className="font-mono">{formatGameDuration(activeGame.startTime)}</span>
-                      </div>
+                      <RealTimeGameTimer startTime={activeGame.startTime} />
                     </div>
                     <Button 
                       onClick={() => handleFinishGame(activeGame.id)}
@@ -181,7 +179,7 @@ const Index = () => {
                     </div>
                     <Button 
                       onClick={() => handlePullNext(cartomante.id)}
-                      className="w-full gradient-brand text-white border-0"
+                      className="w-full bg-primary text-primary-foreground"
                       disabled={!canPullNext}
                     >
                       <Play className="h-4 w-4 mr-2" />
@@ -198,6 +196,14 @@ const Index = () => {
           )
         })}
       </div>
+
+      {/* Queue Manager */}
+      {showQueueManager && (
+        <QueueManager 
+          games={games}
+          onUpdate={() => setGames(gameStore.getGames())}
+        />
+      )}
 
       {/* Queue Section */}
       <Card className="shadow-card">

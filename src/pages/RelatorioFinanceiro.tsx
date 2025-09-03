@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { BarChart3, DollarSign, TrendingUp, Calendar, PieChart } from "lucide-react"
+import { BarChart3, DollarSign, TrendingUp, Calendar, PieChart, FileDown } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { gameStore } from "@/lib/gameStore"
 import { CARTOMANTES, GAME_TYPES } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
+import { PDFReport } from "@/components/PDFReport"
 
 const RelatorioFinanceiro = () => {
   const [games, setGames] = useState(gameStore.getGames())
@@ -132,7 +133,7 @@ const RelatorioFinanceiro = () => {
       <div className="flex items-center space-x-3">
         <BarChart3 className="h-8 w-8 text-primary" />
         <div>
-          <h1 className="text-3xl font-bold gradient-brand bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-primary">
             Relatório Financeiro
           </h1>
           <p className="text-muted-foreground">
@@ -207,15 +208,15 @@ const RelatorioFinanceiro = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center">
               <DollarSign className="h-4 w-4 mr-2 text-primary" />
-              Receita Total
+              Faturamento Total
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-accent">
+            <div className="text-2xl font-bold text-primary">
               {formatCurrency(financialData.totalRevenue)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {filteredGames.length} jogos finalizados
+              Inclui todos os jogos pagos
             </p>
           </CardContent>
         </Card>
@@ -296,7 +297,7 @@ const RelatorioFinanceiro = () => {
                         )}
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-accent">{formatCurrency(revenue)}</p>
+                        <p className="font-semibold text-primary">{formatCurrency(revenue)}</p>
                         <p className="text-xs text-muted-foreground">{gamesCount} jogos</p>
                       </div>
                     </div>
@@ -335,13 +336,13 @@ const RelatorioFinanceiro = () => {
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-sm">{gameType.name}</span>
                       <div className="text-right">
-                        <p className="font-semibold text-accent text-sm">{formatCurrency(revenue)}</p>
+                        <p className="font-semibold text-primary text-sm">{formatCurrency(revenue)}</p>
                         <p className="text-xs text-muted-foreground">{gamesCount} jogos</p>
                       </div>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2">
                       <div 
-                        className="bg-accent h-2 rounded-full transition-all duration-300"
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
@@ -380,7 +381,7 @@ const RelatorioFinanceiro = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-accent">{formatCurrency(client.revenue)}</p>
+                      <p className="font-semibold text-primary">{formatCurrency(client.revenue)}</p>
                       <p className="text-xs text-muted-foreground">
                         {formatCurrency(client.revenue / client.games)} por jogo
                       </p>
@@ -409,7 +410,7 @@ const RelatorioFinanceiro = () => {
                       <p className="text-xs text-muted-foreground">{campaign.games} conversões</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-accent">{formatCurrency(campaign.revenue)}</p>
+                      <p className="font-semibold text-primary">{formatCurrency(campaign.revenue)}</p>
                       <p className="text-xs text-muted-foreground">
                         {formatCurrency(campaign.revenue / campaign.games)} por conversão
                       </p>
@@ -421,6 +422,9 @@ const RelatorioFinanceiro = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* PDF Export */}
+      <PDFReport />
     </div>
   )
 }

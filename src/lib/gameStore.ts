@@ -250,7 +250,12 @@ class GameStore {
   }
 
   getFinancialData(startDate?: string, endDate?: string) {
-    let filteredGames = this.games.filter(game => game.status === 'Jogo finalizado')
+    // Include all paid games for revenue calculation, not just finished ones
+    let filteredGames = this.games.filter(game => 
+      game.status === 'Jogo finalizado' || 
+      game.status === 'Em Jogo' || 
+      game.status === 'Na fila'
+    )
     
     if (startDate) {
       filteredGames = filteredGames.filter(game => game.date >= startDate)

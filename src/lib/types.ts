@@ -24,6 +24,7 @@ export interface Game {
   conversationLink?: string
   startTime?: string
   endTime?: string
+  queue_position?: number
 }
 
 export interface Client {

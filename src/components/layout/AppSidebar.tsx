@@ -68,8 +68,12 @@ export function AppSidebar() {
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 bg-gradient-brand rounded flex-shrink-0 flex items-center justify-center">
-            <span className="text-white font-bold text-sm">AN</span>
+          <div className="h-8 w-8 bg-primary rounded flex-shrink-0 flex items-center justify-center overflow-hidden">
+            <img 
+              src="/src/assets/logo.png" 
+              alt="Axe de Nessa" 
+              className="h-full w-full object-cover"
+            />
           </div>
           {state === "expanded" && (
             <div className="flex flex-col">

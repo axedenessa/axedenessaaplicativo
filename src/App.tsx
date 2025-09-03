@@ -18,6 +18,7 @@ import RelatorioFinanceiro from "./pages/RelatorioFinanceiro";
 import CustosLucros from "./pages/CustosLucros";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import EmployeeAccess from "./pages/EmployeeAccess";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const AppContent = () => {
           <div className="flex-1 p-4 lg:p-6">
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route path="/employee" element={<ProtectedRoute><EmployeeAccess /></ProtectedRoute>} />
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/novo-jogo" element={<ProtectedRoute><NovoJogo /></ProtectedRoute>} />
               <Route path="/ranking" element={<ProtectedRoute><RankingClientes /></ProtectedRoute>} />

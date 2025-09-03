@@ -30,7 +30,6 @@ export default {
 				brand: {
 					dark: 'hsl(var(--brand-dark))',
 					purple: 'hsl(var(--brand-purple))',
-					pink: 'hsl(var(--brand-pink))',
 					light: 'hsl(var(--brand-light))',
 				},
 				primary: {
@@ -73,7 +72,6 @@ export default {
 				}
 			},
 			backgroundImage: {
-				'gradient-brand': 'var(--gradient-brand)',
 				'gradient-subtle': 'var(--gradient-subtle)',
 			},
 			boxShadow: {
