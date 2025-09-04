@@ -108,10 +108,10 @@ const CustosLucros = () => {
   // Calculate financial metrics
   const totalRevenue = filteredGames.reduce((sum, game) => sum + game.value, 0)
 
-  // Calculate commission for Alana (50% of her games - already comes with 50% value)
+  // Calculate commission for Alana (50% of the original price of her games)
   const alanaCommission = filteredGames
     .filter(game => game.cartomante.name === 'Alana Cerqueira')
-    .reduce((sum, game) => sum + game.value, 0)
+    .reduce((sum, game) => sum + (game.value * 2 * 0.5), 0) // game.value * 2 gets original price, then * 0.5 for commission
 
   // Calculate Facebook Ads spend
   const totalAdSpend = campaigns.reduce((sum, campaign) => sum + campaign.spend, 0)
