@@ -139,6 +139,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          cartomante_id: string | null
           created_at: string
           id: string
           name: string
@@ -147,6 +148,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cartomante_id?: string | null
           created_at?: string
           id?: string
           name: string
@@ -155,6 +157,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cartomante_id?: string | null
           created_at?: string
           id?: string
           name?: string

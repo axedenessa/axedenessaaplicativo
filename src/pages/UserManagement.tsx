@@ -23,6 +23,7 @@ const UserManagement = () => {
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [newUserEmail, setNewUserEmail] = useState('')
   const [newUserName, setNewUserName] = useState('')
+  const [newUserPassword, setNewUserPassword] = useState('')
   const [newUserRole, setNewUserRole] = useState<'admin' | 'cartomante'>('cartomante')
   const [newUserCartomanteId, setNewUserCartomanteId] = useState('')
   const [loading, setLoading] = useState(false)
@@ -52,10 +53,10 @@ const UserManagement = () => {
   }
 
   const createUser = async () => {
-    if (!newUserEmail || !newUserName) {
+    if (!newUserEmail || !newUserName || !newUserPassword || newUserPassword.length < 6) {
       toast({
         title: "Campos obrigatórios",
-        description: "Email e nome são obrigatórios.",
+        description: "Email, nome e senha (mín. 6 caracteres) são obrigatórios.",
         variant: "destructive"
       })
       return
@@ -77,6 +78,7 @@ const UserManagement = () => {
         body: {
           email: newUserEmail,
           name: newUserName,
+          password: newUserPassword,
           role: newUserRole,
           cartomante_id: newUserRole === 'cartomante' ? newUserCartomanteId : null
         }
@@ -92,6 +94,7 @@ const UserManagement = () => {
       // Reset form
       setNewUserEmail('')
       setNewUserName('')
+      setNewUserPassword('')
       setNewUserRole('cartomante')
       setNewUserCartomanteId('')
       setShowCreateForm(false)
@@ -152,6 +155,16 @@ const UserManagement = () => {
                   value={newUserName}
                   onChange={(e) => setNewUserName(e.target.value)}
                   placeholder="Nome do usuário"
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={newUserPassword}
+                  onChange={(e) => setNewUserPassword(e.target.value)}
+                  placeholder="Defina uma senha"
                 />
               </div>
               <div>

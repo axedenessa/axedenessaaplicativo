@@ -53,11 +53,12 @@ serve(async (req) => {
     }
 
     // Parse the request body
-    const { email, name, role, cartomante_id } = await req.json()
+    const { email, name, role, cartomante_id, password } = await req.json()
 
     // Create the new user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
+      password,
       email_confirm: true,
       user_metadata: {
         name

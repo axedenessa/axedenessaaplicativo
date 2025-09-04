@@ -424,7 +424,7 @@ const CustosLucros = () => {
             <div className="text-center p-6 bg-gradient-brand rounded-lg text-white">
               <h3 className="text-lg font-semibold mb-2">Lucro Líquido</h3>
               <p className="text-3xl font-bold mb-2">{formatCurrency(netProfit)}</p>
-              <Badge variant={netProfit >= 0 ? "secondary" : "destructive"} className="text-white">
+              <Badge variant={netProfit >= 0 ? "default" : "destructive"}>
                 {netProfit >= 0 ? "Positivo" : "Negativo"}
               </Badge>
             </div>
