@@ -8,67 +8,68 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Axe de Nessa Brand Colors */
-    --brand-dark: 0 0% 10%;           /* #191919 */
-    --brand-purple: 261 87% 64%;      /* #9a53f4 */
-    --brand-light: 60 20% 97%;        /* #f8f8f0 */
+    /* Brand Colors - Pink Theme */
+    --brand-pink: 330 81% 60%;         /* #f13885 */
+    --brand-pink-light: 330 81% 95%;   /* Light pink background */
+    --brand-dark: 0 0% 10%;            /* Dark text */
+    --brand-light: 0 0% 100%;          /* White */
     
-    /* System Colors - Dark Theme */
-    --background: var(--brand-dark);
-    --foreground: var(--brand-light);
+    /* System Colors - Light Theme with Pink */
+    --background: 0 0% 100%;           /* White background */
+    --foreground: 0 0% 10%;            /* Dark text */
 
-    --card: 0 0% 12%;
-    --card-foreground: var(--brand-light);
+    --card: 0 0% 100%;                 /* White cards */
+    --card-foreground: 0 0% 10%;       /* Dark text on cards */
 
-    --popover: 0 0% 12%;
-    --popover-foreground: var(--brand-light);
+    --popover: 0 0% 100%;              /* White popovers */
+    --popover-foreground: 0 0% 10%;    /* Dark text on popovers */
 
-    --primary: var(--brand-purple);
-    --primary-foreground: var(--brand-light);
+    --primary: var(--brand-pink);       /* Pink primary */
+    --primary-foreground: 0 0% 100%;   /* White text on pink */
 
-    --secondary: 0 0% 15%;
-    --secondary-foreground: var(--brand-light);
+    --secondary: 330 81% 96%;          /* Very light pink */
+    --secondary-foreground: 0 0% 10%;  /* Dark text on light pink */
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 65%;
+    --muted: 0 0% 96%;                 /* Light gray */
+    --muted-foreground: 0 0% 45%;      /* Medium gray text */
 
-    --accent: var(--brand-purple);
-    --accent-foreground: var(--brand-light);
+    --accent: var(--brand-pink);       /* Pink accent */
+    --accent-foreground: 0 0% 100%;    /* White text on pink */
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: var(--brand-light);
+    --destructive: 0 84% 60%;          /* Red for destructive actions */
+    --destructive-foreground: 0 0% 100%; /* White text on red */
 
-    --border: 0 0% 20%;
-    --input: 0 0% 15%;
-    --ring: var(--brand-purple);
+    --border: 0 0% 90%;                /* Light gray borders */
+    --input: 0 0% 96%;                 /* Light gray inputs */
+    --ring: var(--brand-pink);         /* Pink focus rings */
 
     --radius: 0.75rem;
 
-    /* Sidebar Colors - Dark Theme */
-    --sidebar-background: var(--brand-dark);
-    --sidebar-foreground: var(--brand-light);
-    --sidebar-primary: var(--brand-purple);
-    --sidebar-primary-foreground: var(--brand-light);
-    --sidebar-accent: 0 0% 15%;
-    --sidebar-accent-foreground: var(--brand-light);
-    --sidebar-border: 0 0% 20%;
-    --sidebar-ring: var(--brand-purple);
+    /* Sidebar Colors - Light Theme */
+    --sidebar-background: 0 0% 100%;   /* White sidebar */
+    --sidebar-foreground: 0 0% 10%;    /* Dark text in sidebar */
+    --sidebar-primary: var(--brand-pink); /* Pink primary in sidebar */
+    --sidebar-primary-foreground: 0 0% 100%; /* White text on pink */
+    --sidebar-accent: 330 81% 96%;     /* Very light pink accent */
+    --sidebar-accent-foreground: 0 0% 10%; /* Dark text on light pink */
+    --sidebar-border: 0 0% 90%;        /* Light gray borders */
+    --sidebar-ring: var(--brand-pink); /* Pink focus rings */
     
-    /* Custom Colors - Pure Purple Theme */
-    --gradient-brand: hsl(var(--brand-purple));
-    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(0 0% 8%));
+    /* Custom Colors - Pink Theme */
+    --gradient-brand: linear-gradient(135deg, hsl(var(--brand-pink)), hsl(330 81% 70%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(330 81% 98%));
     
     /* Shadows */
-    --shadow-glow: 0 0 30px hsl(var(--brand-purple) / 0.3);
-    --shadow-card: 0 4px 20px hsl(0 0% 0% / 0.5);
+    --shadow-glow: 0 0 30px hsl(var(--brand-pink) / 0.2);
+    --shadow-card: 0 4px 20px hsl(0 0% 0% / 0.1);
   }
 
-  /* Light mode overrides (rarely used) */
-  .light {
-    --background: var(--brand-light);
-    --foreground: var(--brand-dark);
+  /* Dark mode - same as light mode for now */
+  .dark {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
     --card: 0 0% 100%;
-    --card-foreground: var(--brand-dark);
+    --card-foreground: 0 0% 10%;
   }
 }
 

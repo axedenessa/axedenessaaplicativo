@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowUp, ArrowDown, Play, CheckCircle, MoreHorizontal } from 'lucide-react'
+import { ArrowUp, ArrowDown, Play, CheckCircle, MoreHorizontal, Undo2, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -112,27 +112,78 @@ export const QueueManager = ({ games, onUpdate }: QueueManagerProps) => {
     }
   }
 
+  const revertGame = async (gameId: string) => {
+    setProcessing(gameId)
+    try {
+      await gameStore.updateGame(gameId, {
+        status: 'Em Jogo',
+        endTime: undefined
+      })
+      const game = games.find(g => g.id === gameId)
+      toast({
+        title: "Jogo revertido",
+        description: `Jogo de ${game?.clientName} voltou para 'Em Jogo'.`,
+      })
+      onUpdate()
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível reverter o jogo.",
+        variant: "destructive"
+      })
+    } finally {
+      setProcessing(null)
+    }
+  }
+
+  // Include all games for management (queue, active, finished)
+  const allGames = games.filter(game => 
+    game.status === 'Na fila' || 
+    game.status === 'Em Jogo' || 
+    game.status === 'Jogo finalizado'
+  ).sort((a, b) => {
+    // Sort by status priority and then by time
+    const statusOrder = { 'Em Jogo': 0, 'Na fila': 1, 'Jogo finalizado': 2 }
+    const aOrder = statusOrder[a.status as keyof typeof statusOrder]
+    const bOrder = statusOrder[b.status as keyof typeof statusOrder]
+    
+    if (aOrder !== bOrder) return aOrder - bOrder
+    
+    return new Date(`${a.date} ${a.paymentTime}`).getTime() - new Date(`${b.date} ${b.paymentTime}`).getTime()
+  })
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Gerenciar Fila de Atendimento</CardTitle>
       </CardHeader>
       <CardContent>
-        {queueGames.length === 0 ? (
+        {allGames.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">
-            Nenhum cliente na fila
+            Nenhum jogo encontrado
           </p>
         ) : (
           <div className="space-y-2">
-            {queueGames.map((game, index) => (
+            {allGames.map((game, index) => (
               <div 
                 key={game.id} 
                 className="flex items-center justify-between p-3 bg-muted rounded-lg"
               >
                 <div className="flex items-center space-x-3">
-                  <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">
-                    {index + 1}
-                  </Badge>
+                  <div className="flex items-center space-x-2">
+                    {game.status === 'Na fila' && (
+                      <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">
+                        {queueGames.findIndex(q => q.id === game.id) + 1}
+                      </Badge>
+                    )}
+                    <Badge variant={
+                      game.status === 'Em Jogo' ? 'default' : 
+                      game.status === 'Na fila' ? 'secondary' : 
+                      'outline'
+                    }>
+                      {game.status}
+                    </Badge>
+                  </div>
                   <div>
                     <p className="font-medium">{game.clientName}</p>
                     <p className="text-sm text-muted-foreground">
@@ -142,41 +193,72 @@ export const QueueManager = ({ games, onUpdate }: QueueManagerProps) => {
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => moveInQueue(game.id, 'up')}
-                    disabled={index === 0 || processing === game.id}
-                  >
-                    <ArrowUp className="h-4 w-4" />
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => moveInQueue(game.id, 'down')}
-                    disabled={index === queueGames.length - 1 || processing === game.id}
-                  >
-                    <ArrowDown className="h-4 w-4" />
-                  </Button>
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <MoreHorizontal className="h-4 w-4" />
+                  {game.status === 'Na fila' && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => moveInQueue(game.id, 'up')}
+                        disabled={queueGames.findIndex(q => q.id === game.id) === 0 || processing === game.id}
+                      >
+                        <ArrowUp className="h-4 w-4" />
                       </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => startGame(game.id)}>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => moveInQueue(game.id, 'down')}
+                        disabled={queueGames.findIndex(q => q.id === game.id) === queueGames.length - 1 || processing === game.id}
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => startGame(game.id)}
+                        disabled={processing === game.id}
+                      >
                         <Play className="h-4 w-4 mr-2" />
-                        Iniciar Jogo
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => finishGame(game.id)}>
+                        Iniciar
+                      </Button>
+                    </>
+                  )}
+                  
+                  {game.status === 'Em Jogo' && (
+                    <div className="flex gap-1">
+                      <Button
+                        onClick={() => finishGame(game.id)}
+                        size="sm"
+                        variant="outline"
+                        disabled={processing === game.id}
+                      >
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        Finalizar Jogo
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        Finalizar
+                      </Button>
+                      {game.conversationLink && (
+                        <Button
+                          onClick={() => window.open(game.conversationLink, '_blank')}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  
+                  {game.status === 'Jogo finalizado' && (
+                    <Button
+                      onClick={() => revertGame(game.id)}
+                      size="sm"
+                      variant="outline"
+                      disabled={processing === game.id}
+                    >
+                      <Undo2 className="h-4 w-4 mr-2" />
+                      Reverter
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
