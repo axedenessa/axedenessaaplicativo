@@ -46,6 +46,12 @@ const CustosLucros = () => {
         setStartDate(todayStr)
         setEndDate(todayStr)
         break
+      case 'yesterday':
+        const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000)
+        const yesterdayStr = yesterday.toISOString().split('T')[0]
+        setStartDate(yesterdayStr)
+        setEndDate(yesterdayStr)
+        break
       case 'week':
         const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
         setStartDate(weekAgo.toISOString().split('T')[0])
@@ -108,10 +114,10 @@ const CustosLucros = () => {
   // Calculate financial metrics
   const totalRevenue = filteredGames.reduce((sum, game) => sum + game.value, 0)
 
-  // Calculate commission for Alana (50% of the original price of her games)
+  // Calculate commission for Alana (85% of her games value)
   const alanaCommission = filteredGames
     .filter(game => game.cartomante.name === 'Alana Cerqueira')
-    .reduce((sum, game) => sum + (game.value * 2 * 0.5), 0) // game.value * 2 gets original price, then * 0.5 for commission
+    .reduce((sum, game) => sum + (game.value * 0.85), 0) // 85% commission to pay
 
   // Calculate Facebook Ads spend
   const totalAdSpend = campaigns.reduce((sum, campaign) => sum + campaign.spend, 0)
@@ -172,6 +178,7 @@ const CustosLucros = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="today">Hoje</SelectItem>
+                  <SelectItem value="yesterday">Ontem</SelectItem>
                   <SelectItem value="week">Últimos 7 dias</SelectItem>
                   <SelectItem value="month">Últimos 30 dias</SelectItem>
                   <SelectItem value="all">Todos os períodos</SelectItem>
@@ -318,9 +325,9 @@ const CustosLucros = () => {
                       }}
                       className="font-semibold text-left hover:underline focus:outline-none"
                     >
-                      Alana Cerqueira (50%)
+                      Comissão a Pagar (85%)
                     </button>
-                    <p className="text-sm text-muted-foreground">Afiliada - Comissão de 50%</p>
+                    <p className="text-sm text-muted-foreground">Comissão devida à Alana</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -360,7 +367,7 @@ const CustosLucros = () => {
                   <div className="w-3 h-3 bg-destructive rounded-full"></div>
                   <div>
                     <p className="font-semibold">Comissão Alana</p>
-                    <p className="text-sm text-muted-foreground">50% dos jogos da Alana</p>
+                    <p className="text-sm text-muted-foreground">85% dos jogos da Alana</p>
                   </div>
                 </div>
                 <div className="text-right">

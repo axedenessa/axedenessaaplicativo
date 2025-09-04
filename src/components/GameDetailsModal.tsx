@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar, DollarSign, Clock } from 'lucide-react'
 import { Game } from '@/lib/types'
 import { formatDateBR, formatTimeBR } from '@/utils/timezone'
@@ -19,6 +20,36 @@ interface GameDetailsModalProps {
 export const GameDetailsModal = ({ cartomanteName, games, isOpen, onClose }: GameDetailsModalProps) => {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [period, setPeriod] = useState('all')
+
+  // Set default dates based on period
+  const handlePeriodChange = (value: string) => {
+    setPeriod(value)
+    const today = new Date()
+    const todayStr = today.toISOString().split('T')[0]
+    
+    switch (value) {
+      case 'today':
+        setStartDate(todayStr)
+        setEndDate(todayStr)
+        break
+      case 'yesterday':
+        const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000)
+        const yesterdayStr = yesterday.toISOString().split('T')[0]
+        setStartDate(yesterdayStr)
+        setEndDate(yesterdayStr)
+        break
+      case 'week':
+        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+        setStartDate(weekAgo.toISOString().split('T')[0])
+        setEndDate(todayStr)
+        break
+      case 'all':
+        setStartDate('')
+        setEndDate('')
+        break
+    }
+  }
 
   const filteredGames = games.filter(game => {
     if (game.cartomante.name !== cartomanteName) return false
@@ -55,13 +86,29 @@ export const GameDetailsModal = ({ cartomanteName, games, isOpen, onClose }: Gam
             <CardTitle className="text-lg">Filtrar por Período</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Período</Label>
+                <Select value={period} onValueChange={handlePeriodChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="today">Hoje</SelectItem>
+                    <SelectItem value="yesterday">Ontem</SelectItem>
+                    <SelectItem value="week">Últimos 7 dias</SelectItem>
+                    <SelectItem value="all">Todos os períodos</SelectItem>
+                    <SelectItem value="custom">Personalizado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <Label>Data Inicial</Label>
                 <Input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
+                  disabled={period !== 'custom'}
                 />
               </div>
               <div className="space-y-2">
@@ -70,6 +117,7 @@ export const GameDetailsModal = ({ cartomanteName, games, isOpen, onClose }: Gam
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
+                  disabled={period !== 'custom'}
                 />
               </div>
             </div>
