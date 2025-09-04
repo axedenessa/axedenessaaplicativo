@@ -72,29 +72,17 @@ const UserManagement = () => {
 
     setLoading(true)
     try {
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: newUserEmail,
-        email_confirm: true,
-        user_metadata: {
-          name: newUserName
+      // Call edge function to create user
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: newUserEmail,
+          name: newUserName,
+          role: newUserRole,
+          cartomante_id: newUserRole === 'cartomante' ? newUserCartomanteId : null
         }
       })
 
-      if (authError) throw authError
-
-      // Update profile with role information
-      if (authData.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            role: newUserRole,
-            cartomante_id: newUserRole === 'cartomante' ? newUserCartomanteId : null
-          })
-          .eq('user_id', authData.user.id)
-
-        if (profileError) throw profileError
-      }
+      if (error) throw error
 
       toast({
         title: "Usuário criado",

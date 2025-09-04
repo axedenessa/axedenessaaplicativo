@@ -114,10 +114,10 @@ const CustosLucros = () => {
   // Calculate financial metrics
   const totalRevenue = filteredGames.reduce((sum, game) => sum + game.value, 0)
 
-  // Calculate commission for Alana (85% of her games value)
+  // Calculate commission for Alana (50% of her games value)
   const alanaCommission = filteredGames
     .filter(game => game.cartomante.name === 'Alana Cerqueira')
-    .reduce((sum, game) => sum + (game.value * 0.85), 0) // 85% commission to pay
+    .reduce((sum, game) => sum + (game.value * 0.5), 0) // 50% commission to pay
 
   // Calculate Facebook Ads spend
   const totalAdSpend = campaigns.reduce((sum, campaign) => sum + campaign.spend, 0)
@@ -325,7 +325,7 @@ const CustosLucros = () => {
                       }}
                       className="font-semibold text-left hover:underline focus:outline-none"
                     >
-                      Comissão a Pagar (85%)
+                      Comissão a Pagar (50%)
                     </button>
                     <p className="text-sm text-muted-foreground">Comissão devida à Alana</p>
                   </div>
@@ -367,7 +367,7 @@ const CustosLucros = () => {
                   <div className="w-3 h-3 bg-destructive rounded-full"></div>
                   <div>
                     <p className="font-semibold">Comissão Alana</p>
-                    <p className="text-sm text-muted-foreground">85% dos jogos da Alana</p>
+                    <p className="text-sm text-muted-foreground">50% dos jogos da Alana</p>
                   </div>
                 </div>
                 <div className="text-right">
