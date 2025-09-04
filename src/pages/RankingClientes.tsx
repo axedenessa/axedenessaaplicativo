@@ -300,7 +300,7 @@ const RankingClientes = () => {
                           <div>
                             <p>{formatDate(client.lastGame)}</p>
                             <p className="text-xs text-muted-foreground">
-                              {daysDiff === 0 ? 'Hoje' : `${daysDiff} dias atrás`}
+                              {daysDiff === 0 ? 'Hoje' : daysDiff === 1 ? 'Ontem' : `${daysDiff} dias atrás`}
                             </p>
                           </div>
                         </TableCell>
