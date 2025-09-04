@@ -25,9 +25,17 @@ const RankingClientes = () => {
 
   // Set default dates based on period
   useEffect(() => {
+    const toLocalDateString = (date: Date) => {
+      const y = date.getFullYear()
+      const m = String(date.getMonth() + 1).padStart(2, '0')
+      const d = String(date.getDate()).padStart(2, '0')
+      return `${y}-${m}-${d}`
+    }
+
     const today = new Date()
-    const todayStr = today.toISOString().split('T')[0]
-    const yesterdayStr = new Date(today.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const todayStr = toLocalDateString(today)
+    const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1)
+    const yesterdayStr = toLocalDateString(yesterday)
     
     switch (period) {
       case 'today':
@@ -39,13 +47,13 @@ const RankingClientes = () => {
         setEndDate(yesterdayStr)
         break
       case 'week':
-        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
-        setStartDate(weekAgo.toISOString().split('T')[0])
+        const weekAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7)
+        setStartDate(toLocalDateString(weekAgo))
         setEndDate(todayStr)
         break
       case 'month':
-        const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
-        setStartDate(monthAgo.toISOString().split('T')[0])
+        const monthAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 30)
+        setStartDate(toLocalDateString(monthAgo))
         setEndDate(todayStr)
         break
       case 'all':
@@ -54,6 +62,18 @@ const RankingClientes = () => {
         break
     }
   }, [period])
+
+  // Date helpers (local, timezone-safe)
+  const toLocalDateString = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  const parseLocalDate = (s: string) => {
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(y, (m || 1) - 1, d || 1);
+  }
 
   const getFilteredClients = () => {
     if (!startDate && !endDate) return clients
@@ -77,14 +97,14 @@ const RankingClientes = () => {
       
       const totalSpent = games.reduce((sum, game) => sum + game.value, 0)
       const totalGames = games.length
-      const lastGameInPeriod = Math.max(...filteredGameDates.map(date => new Date(date).getTime()))
+      const lastGameInPeriod = Math.max(...filteredGameDates.map(date => parseLocalDate(date).getTime()))
       
       return {
         ...client,
         totalSpent,
         totalGames,
         gameDates: filteredGameDates,
-        lastGame: new Date(lastGameInPeriod).toISOString().split('T')[0]
+        lastGame: toLocalDateString(new Date(lastGameInPeriod))
       }
     }).filter(Boolean) as Client[]
   }
@@ -100,7 +120,8 @@ const RankingClientes = () => {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR')
+    const d = parseLocalDate(dateString)
+    return d.toLocaleDateString('pt-BR')
   }
 
   const totalRevenue = filteredClients.reduce((sum, client) => sum + client.totalSpent, 0)
@@ -261,9 +282,11 @@ const RankingClientes = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredClients.map((client, index) => {
-                    const today = new Date().toISOString().split('T')[0]
-                    const lastGameDate = client.lastGame
-                    const daysDiff = Math.floor((new Date(today).getTime() - new Date(lastGameDate).getTime()) / (1000 * 60 * 60 * 24))
+                    const MS_PER_DAY = 1000 * 60 * 60 * 24
+                    const now = new Date()
+                    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+                    const lastGameStart = parseLocalDate(client.lastGame)
+                    const daysDiff = Math.floor((todayStart.getTime() - lastGameStart.getTime()) / MS_PER_DAY)
                     
                     let statusColor = "default"
                     let statusText = "Ativo"
