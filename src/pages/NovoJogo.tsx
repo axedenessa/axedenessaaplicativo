@@ -28,8 +28,8 @@ const NovoJogo = () => {
   const selectedGameType = GAME_TYPES.find(gt => gt.id === formData.gameTypeId)
   const selectedCartomante = CARTOMANTES.find(c => c.id === formData.cartomanteId)
   
-  const calculatedValue = selectedGameType && selectedCartomante 
-    ? selectedGameType.basePrice * selectedCartomante.priceMultiplier
+  const calculatedValue = selectedGameType 
+    ? selectedGameType.basePrice
     : 0
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -241,11 +241,12 @@ const NovoJogo = () => {
       <Card className="shadow-card">
         <CardHeader>
           <CardTitle className="text-lg">Tabela de Preços</CardTitle>
+          <CardDescription>Valores que o cliente paga (sempre integral). O desconto da Alana é no pagamento a ela.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4">
             <div>
-              <h4 className="font-semibold mb-2">Vanessa Barreto (Preço Integral)</h4>
+              <h4 className="font-semibold mb-2">Preços para Cliente (Sempre Integral)</h4>
               <div className="space-y-1 text-sm">
                 {GAME_TYPES.map(gameType => (
                   <div key={gameType.id} className="flex justify-between">
@@ -255,15 +256,11 @@ const NovoJogo = () => {
                 ))}
               </div>
             </div>
-            <div>
-              <h4 className="font-semibold mb-2">Alana Cerqueira (50% desconto)</h4>
-              <div className="space-y-1 text-sm">
-                {GAME_TYPES.map(gameType => (
-                  <div key={gameType.id} className="flex justify-between">
-                    <span>{gameType.name}</span>
-                    <span>R$ {(gameType.basePrice * 0.5).toFixed(2)}</span>
-                  </div>
-                ))}
+            <div className="bg-muted p-3 rounded-lg">
+              <h4 className="font-semibold mb-2 text-sm">Comissão das Cartomantes</h4>
+              <div className="space-y-1 text-xs text-muted-foreground">
+                <div>• Vanessa Barreto: 100% do valor</div>
+                <div>• Alana Cerqueira: 50% do valor</div>
               </div>
             </div>
           </div>
