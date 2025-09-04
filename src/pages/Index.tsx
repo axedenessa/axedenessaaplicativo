@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Clock, Play, CheckCircle, Users, Settings } from "lucide-react"
+import { Clock, Play, CheckCircle, Users, Settings, ExternalLink, Undo2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -15,6 +15,7 @@ import { RealTimeGameTimer } from '@/components/RealTimeGameTimer'
 const Index = () => {
   const [games, setGames] = useState<Game[]>([])
   const [showQueueManager, setShowQueueManager] = useState(false)
+  const [queueFilter, setQueueFilter] = useState<'all' | 'vanessa' | 'alana'>('all')
   const { toast } = useToast()
 
   useEffect(() => {
@@ -25,11 +26,26 @@ const Index = () => {
     return unsubscribe
   }, [])
 
-  const queueGames = games
-    .filter(game => game.status === 'Na fila')
+  const filteredQueueGames = games
+    .filter(game => {
+      if (game.status !== 'Na fila') return false
+      if (queueFilter === 'all') return true
+      if (queueFilter === 'vanessa') return game.cartomante.name === 'Vanessa Barreto'
+      if (queueFilter === 'alana') return game.cartomante.name === 'Alana Cerqueira'
+      return true
+    })
     .sort((a, b) => new Date(`${a.date} ${a.paymentTime}`).getTime() - new Date(`${b.date} ${b.paymentTime}`).getTime())
 
+  const queueGames = filteredQueueGames
+
   const activeGames = games.filter(game => game.status === 'Em Jogo')
+  
+  // Calculate today's revenue from all paid games (not just finished)
+  const todayPaidGames = games.filter(game => 
+    game.date === new Date().toISOString().split('T')[0] &&
+    (game.status === 'Jogo finalizado' || game.status === 'Em Jogo' || game.status === 'Na fila')
+  )
+  
   const todayFinished = games.filter(game => 
     game.status === 'Jogo finalizado' && 
     game.date === new Date().toISOString().split('T')[0]
@@ -60,6 +76,11 @@ const Index = () => {
       title: "Atendimento iniciado",
       description: `${nextGame.clientName} está sendo atendido agora.`,
     })
+    
+    // Open conversation link if available
+    if (nextGame.conversationLink) {
+      window.open(nextGame.conversationLink, '_blank')
+    }
   }
 
   const handleFinishGame = (gameId: string) => {
@@ -67,6 +88,17 @@ const Index = () => {
     toast({
       title: "Atendimento finalizado",
       description: "Jogo marcado como finalizado com sucesso.",
+    })
+  }
+
+  const handleRevertGame = (gameId: string) => {
+    gameStore.updateGame(gameId, {
+      status: 'Em Jogo',
+      endTime: undefined
+    })
+    toast({
+      title: "Jogo revertido",
+      description: "Jogo voltou para status 'Em Jogo'.",
     })
   }
 
@@ -159,14 +191,25 @@ const Index = () => {
                       </div>
                       <RealTimeGameTimer startTime={activeGame.startTime} />
                     </div>
-                    <Button 
-                      onClick={() => handleFinishGame(activeGame.id)}
-                      className="w-full"
-                      variant="outline"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Finalizar Jogo
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={() => handleFinishGame(activeGame.id)}
+                        className="flex-1"
+                        variant="outline"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Finalizar Jogo
+                      </Button>
+                      {activeGame.conversationLink && (
+                        <Button 
+                          onClick={() => window.open(activeGame.conversationLink, '_blank')}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ) : nextInQueue ? (
                   <div className="p-4 bg-muted rounded-lg">
@@ -177,14 +220,25 @@ const Index = () => {
                       </div>
                       <Badge variant="outline">Próximo</Badge>
                     </div>
-                    <Button 
-                      onClick={() => handlePullNext(cartomante.id)}
-                      className="w-full bg-primary text-primary-foreground"
-                      disabled={!canPullNext}
-                    >
-                      <Play className="h-4 w-4 mr-2" />
-                      Puxar Próximo Cliente
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={() => handlePullNext(cartomante.id)}
+                        className="flex-1 bg-primary text-primary-foreground"
+                        disabled={!canPullNext}
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        Puxar Próximo Cliente
+                      </Button>
+                      {nextInQueue?.conversationLink && (
+                        <Button 
+                          onClick={() => window.open(nextInQueue.conversationLink, '_blank')}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="p-4 bg-muted/50 rounded-lg text-center">
@@ -208,11 +262,36 @@ const Index = () => {
       {/* Queue Section */}
       <Card className="shadow-card">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Users className="h-5 w-5 text-primary" />
-            <span>Fila de Atendimento</span>
-            <Badge variant="secondary">{queueGames.length}</Badge>
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Users className="h-5 w-5 text-primary" />
+              <span className="text-lg font-semibold">Fila de Atendimento</span>
+              <Badge variant="secondary">{queueGames.length}</Badge>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant={queueFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setQueueFilter('all')}
+              >
+                Todos
+              </Button>
+              <Button
+                variant={queueFilter === 'vanessa' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setQueueFilter('vanessa')}
+              >
+                Vanessa
+              </Button>
+              <Button
+                variant={queueFilter === 'alana' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setQueueFilter('alana')}
+              >
+                Alana
+              </Button>
+            </div>
+          </div>
           <CardDescription>
             Clientes aguardando atendimento por ordem de chegada
           </CardDescription>
@@ -271,10 +350,10 @@ const Index = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              R$ {todayFinished.reduce((sum, game) => sum + game.value, 0).toFixed(2)}
+              R$ {todayPaidGames.reduce((sum, game) => sum + game.value, 0).toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Ticket médio: R$ {todayFinished.length > 0 ? (todayFinished.reduce((sum, game) => sum + game.value, 0) / todayFinished.length).toFixed(2) : '0.00'}
+              Ticket médio: R$ {todayPaidGames.length > 0 ? (todayPaidGames.reduce((sum, game) => sum + game.value, 0) / todayPaidGames.length).toFixed(2) : '0.00'}
             </p>
           </CardContent>
         </Card>
