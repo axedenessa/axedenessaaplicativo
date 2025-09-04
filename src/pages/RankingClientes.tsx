@@ -77,14 +77,14 @@ const RankingClientes = () => {
       
       const totalSpent = games.reduce((sum, game) => sum + game.value, 0)
       const totalGames = games.length
-      const lastGame = Math.max(...filteredGameDates.map(date => new Date(date).getTime()))
+      const lastGameInPeriod = Math.max(...filteredGameDates.map(date => new Date(date).getTime()))
       
       return {
         ...client,
         totalSpent,
         totalGames,
         gameDates: filteredGameDates,
-        lastGame: new Date(lastGame).toISOString().split('T')[0]
+        lastGame: new Date(lastGameInPeriod).toISOString().split('T')[0]
       }
     }).filter(Boolean) as Client[]
   }
