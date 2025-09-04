@@ -58,10 +58,16 @@ All colors MUST be HSL.
     /* Custom Colors - Pink Theme */
     --gradient-brand: linear-gradient(135deg, hsl(var(--brand-pink)), hsl(330 81% 70%));
     --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(330 81% 98%));
+    --gradient-glow: linear-gradient(135deg, hsl(var(--brand-pink) / 0.1), hsl(var(--accent) / 0.1));
     
     /* Shadows */
     --shadow-glow: 0 0 30px hsl(var(--brand-pink) / 0.2);
     --shadow-card: 0 4px 20px hsl(0 0% 0% / 0.1);
+    --shadow-notification: 0 8px 32px hsl(0 0% 0% / 0.15);
+    
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 
   /* Dark mode - same as light mode for now */
@@ -91,11 +97,55 @@ All colors MUST be HSL.
     background: var(--gradient-brand);
   }
   
+  .gradient-glow {
+    background: var(--gradient-glow);
+  }
+  
   .shadow-glow {
     box-shadow: var(--shadow-glow);
   }
   
   .shadow-card {
     box-shadow: var(--shadow-card);
+  }
+  
+  .shadow-notification {
+    box-shadow: var(--shadow-notification);
+  }
+  
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+  
+  .transition-bounce {
+    transition: var(--transition-bounce);
+  }
+  
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    .mobile-padding {
+      @apply px-4 py-2;
+    }
+    
+    .mobile-text {
+      @apply text-sm;
+    }
+    
+    .mobile-card {
+      @apply p-3 rounded-lg shadow-sm;
+    }
+  }
+  
+  /* Real-time indicators */
+  .pulse-success {
+    @apply animate-pulse bg-accent/20 border-accent/30;
+  }
+  
+  .pulse-warning {
+    @apply animate-pulse bg-primary/20 border-primary/30;
+  }
+  
+  .pulse-danger {
+    @apply animate-pulse bg-destructive/20 border-destructive/30;
   }
 }

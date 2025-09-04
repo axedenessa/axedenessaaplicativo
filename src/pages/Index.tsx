@@ -1,22 +1,30 @@
 import { useState, useEffect } from "react"
-import { Clock, Play, CheckCircle, Users, Settings, ExternalLink, Undo2 } from "lucide-react"
+import { Clock, Play, CheckCircle, Users, Settings, ExternalLink, Undo2, BarChart3, Smartphone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { gameStore } from "@/lib/gameStore"
 import { Game, CARTOMANTES } from "@/lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { toZonedTime, format } from 'date-fns-tz'
 import { addMinutes } from 'date-fns'
 import { useRealTimeTimer } from '@/hooks/useRealTimeTimer'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { QueueManager } from '@/components/QueueManager'
 import { RealTimeGameTimer } from '@/components/RealTimeGameTimer'
+import { NotificationSystem } from '@/components/NotificationSystem'
+import { RealTimeDashboard } from '@/components/RealTimeDashboard'
+import { MobileDashboard } from '@/components/MobileDashboard'
+import { SmartQueue } from '@/components/SmartQueue'
 
 const Index = () => {
   const [games, setGames] = useState<Game[]>([])
   const [showQueueManager, setShowQueueManager] = useState(false)
   const [queueFilter, setQueueFilter] = useState<'all' | 'vanessa' | 'alana'>('all')
+  const [activeView, setActiveView] = useState<'dashboard' | 'analytics' | 'queue'>('dashboard')
   const { toast } = useToast()
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     const updateGames = () => setGames(gameStore.getGames())
@@ -124,7 +132,10 @@ const Index = () => {
     return format(saoPauloTime, 'HH:mm', { timeZone: 'America/Sao_Paulo' })
   }
 
-  // Removed - now using real-time hook
+  // Renderizar versão mobile se detectado
+  if (isMobile) {
+    return <MobileDashboard />
+  }
 
   return (
     <div className="space-y-6">
@@ -150,6 +161,7 @@ const Index = () => {
               {todayFinished.length} finalizados hoje
             </span>
           </div>
+          <NotificationSystem />
           <Button
             variant="outline"
             size="sm"
@@ -161,7 +173,25 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Cartomantes Section */}
+      {/* Tabs para diferentes visualizações */}
+      <Tabs value={activeView} onValueChange={(value) => setActiveView(value as any)} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="dashboard" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Dashboard
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Analytics
+          </TabsTrigger>
+          <TabsTrigger value="queue" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Fila Inteligente
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="dashboard" className="space-y-6">
+          {/* Cartomantes Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {CARTOMANTES.map(cartomante => {
           const activeGame = activeGames.find(game => game.cartomante.id === cartomante.id)
@@ -370,6 +400,16 @@ const Index = () => {
           </CardContent>
         </Card>
       </div>
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          <RealTimeDashboard />
+        </TabsContent>
+
+        <TabsContent value="queue">
+          <SmartQueue />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
