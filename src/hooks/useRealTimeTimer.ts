@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { convertFromUTC, getCurrentTimeBR } from '@/utils/timezone'
 
 export const useRealTimeTimer = (startTime?: string) => {
   const [duration, setDuration] = useState<string>("00:00")
@@ -10,8 +11,8 @@ export const useRealTimeTimer = (startTime?: string) => {
     }
 
     const updateTimer = () => {
-      const start = new Date(startTime)
-      const now = new Date()
+      const start = convertFromUTC(startTime)
+      const now = getCurrentTimeBR()
       const diffSeconds = Math.floor((now.getTime() - start.getTime()) / 1000)
       
       const minutes = Math.floor(diffSeconds / 60)

@@ -16,6 +16,7 @@ import RankingClientes from "./pages/RankingClientes";
 import Campanhas from "./pages/Campanhas";
 import RelatorioFinanceiro from "./pages/RelatorioFinanceiro";
 import CustosLucros from "./pages/CustosLucros";
+import UserManagement from "./pages/UserManagement";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import EmployeeAccess from "./pages/EmployeeAccess";
@@ -63,8 +64,9 @@ const AppContent = () => {
               <Route path="/ranking" element={<ProtectedRoute><RankingClientes /></ProtectedRoute>} />
               <Route path="/campanhas" element={<ProtectedRoute><Campanhas /></ProtectedRoute>} />
               <Route path="/relatorio-financeiro" element={<ProtectedRoute><RelatorioFinanceiro /></ProtectedRoute>} />
-              <Route path="/custos-lucros" element={<ProtectedRoute><CustosLucros /></ProtectedRoute>} />
-              <Route path="*" element={<NotFound />} />
+            <Route path="/custos-lucros" element={<ProtectedRoute><CustosLucros /></ProtectedRoute>} />
+            <Route path="/usuarios" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
         </main>
