@@ -27,11 +27,16 @@ const RankingClientes = () => {
   useEffect(() => {
     const today = new Date()
     const todayStr = today.toISOString().split('T')[0]
+    const yesterdayStr = new Date(today.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     
     switch (period) {
       case 'today':
         setStartDate(todayStr)
         setEndDate(todayStr)
+        break
+      case 'yesterday':
+        setStartDate(yesterdayStr)
+        setEndDate(yesterdayStr)
         break
       case 'week':
         const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
@@ -131,6 +136,7 @@ const RankingClientes = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="today">Hoje</SelectItem>
+                  <SelectItem value="yesterday">Ontem</SelectItem>
                   <SelectItem value="week">Últimos 7 dias</SelectItem>
                   <SelectItem value="month">Últimos 30 dias</SelectItem>
                   <SelectItem value="all">Todos os períodos</SelectItem>
