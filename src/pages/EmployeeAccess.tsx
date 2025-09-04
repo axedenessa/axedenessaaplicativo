@@ -3,16 +3,25 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Clock, Play, CheckCircle, DollarSign, Target } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Clock, Play, CheckCircle, DollarSign, Target, Calendar, History } from 'lucide-react'
 import { gameStore } from '@/lib/gameStore'
 import { Game, CARTOMANTES } from '@/lib/types'
 import { useToast } from '@/hooks/use-toast'
 import { RealTimeGameTimer } from '@/components/RealTimeGameTimer'
 import { PDFReport } from '@/components/PDFReport'
+import { formatDateBR, formatTimeBR } from '@/utils/timezone'
 
 const EmployeeAccess = () => {
   const [games, setGames] = useState<Game[]>([])
   const [userProfile, setUserProfile] = useState<any>(null)
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [period, setPeriod] = useState('today')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const { user } = useAuth()
   const { toast } = useToast()
 
@@ -37,6 +46,29 @@ const EmployeeAccess = () => {
     }
   }, [user])
 
+  // Set default dates based on period
+  useEffect(() => {
+    const today = new Date()
+    const todayStr = today.toISOString().split('T')[0]
+    
+    switch (period) {
+      case 'today':
+        setStartDate(todayStr)
+        setEndDate(todayStr)
+        break
+      case 'week':
+        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+        setStartDate(weekAgo.toISOString().split('T')[0])
+        setEndDate(todayStr)
+        break
+      case 'month':
+        const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+        setStartDate(monthAgo.toISOString().split('T')[0])
+        setEndDate(todayStr)
+        break
+    }
+  }, [period])
+
   const myGames = games.filter(game => 
     employeeCartomante && game.cartomante.id === employeeCartomante.id
   )
@@ -52,6 +84,31 @@ const EmployeeAccess = () => {
 
   const finishedToday = todayGames.filter(game => game.status === 'Jogo finalizado')
   const todayRevenue = todayGames.reduce((sum, game) => sum + game.value, 0)
+
+  // Historical games based on selected period
+  const getHistoricalGames = () => {
+    let filtered = myGames.filter(game => game.status === 'Jogo finalizado')
+    
+    if (period === 'custom') {
+      if (startDate) filtered = filtered.filter(game => game.date >= startDate)
+      if (endDate) filtered = filtered.filter(game => game.date <= endDate)
+    } else {
+      if (startDate) filtered = filtered.filter(game => game.date >= startDate)
+      if (endDate) filtered = filtered.filter(game => game.date <= endDate)
+    }
+    
+    return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  }
+
+  const historicalGames = getHistoricalGames()
+  const historicalRevenue = historicalGames.reduce((sum, game) => sum + game.value, 0)
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value)
+  }
 
   const handlePullNext = () => {
     if (activeGame) {
@@ -250,6 +307,166 @@ const EmployeeAccess = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Historical Performance */}
+      <Card className="shadow-card">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <History className="h-5 w-5" />
+            <span>Histórico de Performance</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Date Filter */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label>Período</Label>
+                <Select value={period} onValueChange={setPeriod}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="today">Hoje</SelectItem>
+                    <SelectItem value="week">Últimos 7 dias</SelectItem>
+                    <SelectItem value="month">Últimos 30 dias</SelectItem>
+                    <SelectItem value="custom">Personalizado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Data Inicial</Label>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  disabled={period !== 'custom'}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Data Final</Label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  disabled={period !== 'custom'}
+                />
+              </div>
+            </div>
+
+            {/* Performance Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center">
+                    <Calendar className="h-4 w-4 mr-2 text-primary" />
+                    Jogos no Período
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{historicalGames.length}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Jogos finalizados
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center">
+                    <DollarSign className="h-4 w-4 mr-2 text-primary" />
+                    Faturamento Total
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-accent">
+                    {formatCurrency(historicalRevenue)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {employeeCartomante.priceMultiplier === 0.5 && (
+                      <>Sua comissão: {formatCurrency(historicalRevenue * 0.5)}</>
+                    )}
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center">
+                    <Target className="h-4 w-4 mr-2 text-primary" />
+                    Ticket Médio
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-primary">
+                    {formatCurrency(historicalGames.length > 0 ? historicalRevenue / historicalGames.length : 0)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Por jogo
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Games Table */}
+            {historicalGames.length > 0 && (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Tipo de Jogo</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Horário</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                      <TableHead>Campanha</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {historicalGames.slice(0, 10).map((game) => (
+                      <TableRow key={game.id}>
+                        <TableCell className="font-medium">
+                          {game.clientName}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {game.gameType.name}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {formatDateBR(game.date)}
+                        </TableCell>
+                        <TableCell>
+                          {formatTimeBR(`${game.date} ${game.paymentTime}`)}
+                        </TableCell>
+                        <TableCell className="text-right font-semibold text-accent">
+                          {formatCurrency(game.value)}
+                        </TableCell>
+                        <TableCell>
+                          {game.campaign ? (
+                            <Badge variant="secondary" className="text-xs">
+                              {game.campaign}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">-</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {historicalGames.length > 10 && (
+                  <p className="text-center text-muted-foreground text-sm mt-4">
+                    Mostrando 10 de {historicalGames.length} jogos
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* PDF Reports */}
       <PDFReport />

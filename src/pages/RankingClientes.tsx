@@ -3,11 +3,17 @@ import { Users, TrendingUp, Calendar, DollarSign } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { gameStore } from "@/lib/gameStore"
 import { Client } from "@/lib/types"
 
 const RankingClientes = () => {
   const [clients, setClients] = useState<Client[]>([])
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [period, setPeriod] = useState('all')
 
   useEffect(() => {
     const updateClients = () => setClients(gameStore.getClientStats())
@@ -16,6 +22,69 @@ const RankingClientes = () => {
     const unsubscribe = gameStore.subscribe(updateClients)
     return unsubscribe
   }, [])
+
+  // Set default dates based on period
+  useEffect(() => {
+    const today = new Date()
+    const todayStr = today.toISOString().split('T')[0]
+    
+    switch (period) {
+      case 'today':
+        setStartDate(todayStr)
+        setEndDate(todayStr)
+        break
+      case 'week':
+        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+        setStartDate(weekAgo.toISOString().split('T')[0])
+        setEndDate(todayStr)
+        break
+      case 'month':
+        const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+        setStartDate(monthAgo.toISOString().split('T')[0])
+        setEndDate(todayStr)
+        break
+      case 'all':
+        setStartDate('')
+        setEndDate('')
+        break
+    }
+  }, [period])
+
+  const getFilteredClients = () => {
+    if (!startDate && !endDate) return clients
+    
+    return clients.map(client => {
+      // Filter game dates based on selected period
+      const filteredGameDates = client.gameDates.filter(date => {
+        if (startDate && date < startDate) return false
+        if (endDate && date > endDate) return false
+        return true
+      })
+      
+      if (filteredGameDates.length === 0) return null
+      
+      // Recalculate stats for filtered dates
+      const games = gameStore.getGames().filter(game => 
+        game.clientName === client.name && 
+        game.status === 'Jogo finalizado' &&
+        filteredGameDates.includes(game.date)
+      )
+      
+      const totalSpent = games.reduce((sum, game) => sum + game.value, 0)
+      const totalGames = games.length
+      const lastGame = Math.max(...filteredGameDates.map(date => new Date(date).getTime()))
+      
+      return {
+        ...client,
+        totalSpent,
+        totalGames,
+        gameDates: filteredGameDates,
+        lastGame: new Date(lastGame).toISOString().split('T')[0]
+      }
+    }).filter(Boolean) as Client[]
+  }
+
+  const filteredClients = getFilteredClients().sort((a, b) => b.totalSpent - a.totalSpent)
 
   const formatFrequency = (days: number) => {
     if (days === 0) return "Único jogo"
@@ -29,8 +98,8 @@ const RankingClientes = () => {
     return new Date(dateString).toLocaleDateString('pt-BR')
   }
 
-  const totalRevenue = clients.reduce((sum, client) => sum + client.totalSpent, 0)
-  const totalGames = clients.reduce((sum, client) => sum + client.totalGames, 0)
+  const totalRevenue = filteredClients.reduce((sum, client) => sum + client.totalSpent, 0)
+  const totalGames = filteredClients.reduce((sum, client) => sum + client.totalGames, 0)
   const avgTicket = totalRevenue / totalGames || 0
 
   return (
@@ -47,6 +116,52 @@ const RankingClientes = () => {
         </div>
       </div>
 
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Filtrar por Período</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label>Período</Label>
+              <Select value={period} onValueChange={setPeriod}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Hoje</SelectItem>
+                  <SelectItem value="week">Últimos 7 dias</SelectItem>
+                  <SelectItem value="month">Últimos 30 dias</SelectItem>
+                  <SelectItem value="all">Todos os períodos</SelectItem>
+                  <SelectItem value="custom">Personalizado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Data Inicial</Label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                disabled={period !== 'custom'}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Data Final</Label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                disabled={period !== 'custom'}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -57,7 +172,7 @@ const RankingClientes = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{clients.length}</div>
+            <div className="text-2xl font-bold">{filteredClients.length}</div>
             <p className="text-xs text-muted-foreground">
               Clientes únicos cadastrados
             </p>
@@ -119,7 +234,7 @@ const RankingClientes = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {clients.length === 0 ? (
+          {filteredClients.length === 0 ? (
             <div className="text-center py-8">
               <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">Nenhum cliente cadastrado ainda</p>
@@ -139,7 +254,7 @@ const RankingClientes = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {clients.map((client, index) => {
+                  {filteredClients.map((client, index) => {
                     const daysSinceLastGame = new Date().getTime() - new Date(client.lastGame).getTime()
                     const daysDiff = Math.floor(daysSinceLastGame / (1000 * 60 * 60 * 24))
                     
@@ -198,7 +313,7 @@ const RankingClientes = () => {
       </Card>
 
       {/* Top Clients Summary */}
-      {clients.length > 0 && (
+      {filteredClients.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="shadow-card">
             <CardHeader className="pb-2">
@@ -207,10 +322,10 @@ const RankingClientes = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <p className="font-semibold text-primary">{clients[0]?.name}</p>
-                <p className="text-2xl font-bold text-accent">R$ {clients[0]?.totalSpent.toFixed(2)}</p>
+                <p className="font-semibold text-primary">{filteredClients[0]?.name}</p>
+                <p className="text-2xl font-bold text-accent">R$ {filteredClients[0]?.totalSpent.toFixed(2)}</p>
                 <p className="text-sm text-muted-foreground">
-                  {clients[0]?.totalGames} consultas realizadas
+                  {filteredClients[0]?.totalGames} consultas realizadas
                 </p>
               </div>
             </CardContent>
@@ -224,7 +339,7 @@ const RankingClientes = () => {
             <CardContent>
               <div className="space-y-2">
                 {(() => {
-                  const mostFrequent = [...clients].sort((a, b) => b.totalGames - a.totalGames)[0]
+                  const mostFrequent = [...filteredClients].sort((a, b) => b.totalGames - a.totalGames)[0]
                   return (
                     <>
                       <p className="font-semibold text-primary">{mostFrequent?.name}</p>
@@ -247,7 +362,7 @@ const RankingClientes = () => {
             <CardContent>
               <div className="space-y-2">
                 {(() => {
-                  const highestTicket = [...clients]
+                  const highestTicket = [...filteredClients]
                     .sort((a, b) => (b.totalSpent / b.totalGames) - (a.totalSpent / a.totalGames))[0]
                   return (
                     <>

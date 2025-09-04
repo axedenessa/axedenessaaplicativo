@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { gameStore } from "@/lib/gameStore"
 import { facebookAPI } from "@/lib/facebookApi"
 import { CARTOMANTES } from "@/lib/types"
+import { GameDetailsModal } from "@/components/GameDetailsModal"
 
 const CustosLucros = () => {
   const [games, setGames] = useState(gameStore.getGames())
@@ -16,6 +17,8 @@ const CustosLucros = () => {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [period, setPeriod] = useState('month')
+  const [selectedCartomante, setSelectedCartomante] = useState<string>('')
+  const [isGameDetailsOpen, setIsGameDetailsOpen] = useState(false)
 
   useEffect(() => {
     const unsubscribe = gameStore.subscribe(() => {
@@ -284,7 +287,15 @@ const CustosLucros = () => {
                 <div className="flex items-center space-x-3">
                   <div className="w-3 h-3 bg-primary rounded-full"></div>
                   <div>
-                    <p className="font-semibold">Vanessa Barreto (100%)</p>
+                    <button 
+                      onClick={() => {
+                        setSelectedCartomante('Vanessa Barreto')
+                        setIsGameDetailsOpen(true)
+                      }}
+                      className="font-semibold text-left hover:underline focus:outline-none"
+                    >
+                      Vanessa Barreto (100%)
+                    </button>
                     <p className="text-sm text-muted-foreground">Titular - Fica com valor integral</p>
                   </div>
                 </div>
@@ -300,7 +311,15 @@ const CustosLucros = () => {
                 <div className="flex items-center space-x-3">
                   <div className="w-3 h-3 bg-accent rounded-full"></div>
                   <div>
-                    <p className="font-semibold">Alana Cerqueira (50%)</p>
+                    <button 
+                      onClick={() => {
+                        setSelectedCartomante('Alana Cerqueira')
+                        setIsGameDetailsOpen(true)
+                      }}
+                      className="font-semibold text-left hover:underline focus:outline-none"
+                    >
+                      Alana Cerqueira (50%)
+                    </button>
                     <p className="text-sm text-muted-foreground">Afiliada - Comissão de 50%</p>
                   </div>
                 </div>
@@ -428,8 +447,36 @@ const CustosLucros = () => {
           <CardTitle>Insights e Recomendações</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {profitMargin < 10 && (
+          <div className="space-y-4">
+            {/* Performance Insights */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 bg-gradient-to-r from-primary/20 to-accent/20 rounded-lg">
+                <h4 className="font-semibold mb-2">💡 Insight de Performance</h4>
+                <p className="text-sm text-muted-foreground">
+                  {profitMargin > 30 ? 
+                    "Excelente margem de lucro! O negócio está muito rentável." :
+                    profitMargin > 15 ?
+                    "Boa margem de lucro. Continue otimizando os custos." :
+                    "Margem baixa. Considere ajustar preços ou reduzir custos."
+                  }
+                </p>
+              </div>
+              <div className="p-4 bg-gradient-to-r from-accent/20 to-primary/20 rounded-lg">
+                <h4 className="font-semibold mb-2">📊 Análise de ROI</h4>
+                <p className="text-sm text-muted-foreground">
+                  {roi > 200 ? 
+                    "ROI excepcional! Investimentos gerando ótimos retornos." :
+                    roi > 100 ?
+                    "ROI positivo. Investimentos compensando os custos." :
+                    "ROI baixo. Revise estratégias de investimento em ads."
+                  }
+                </p>
+              </div>
+            </div>
+            
+            {/* Recommendations */}
+            <div className="space-y-3">
+              {profitMargin < 10 && (
               <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                 <p className="text-sm">
                   <strong>⚠️ Margem baixa:</strong> Consider ajustar preços ou reduzir custos para melhorar a lucratividade.
@@ -453,14 +500,23 @@ const CustosLucros = () => {
               </div>
             )}
             
-            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-              <p className="text-sm">
-                <strong>💡 Dica:</strong> Acompanhe essas métricas regularmente para identificar tendências e otimizar a operação.
-              </p>
+              <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <p className="text-sm">
+                  <strong>💡 Dica:</strong> Acompanhe essas métricas regularmente para identificar tendências e otimizar a operação.
+                </p>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Game Details Modal */}
+      <GameDetailsModal
+        cartomanteName={selectedCartomante}
+        games={games}
+        isOpen={isGameDetailsOpen}
+        onClose={() => setIsGameDetailsOpen(false)}
+      />
     </div>
   )
 }
