@@ -261,8 +261,9 @@ const RankingClientes = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredClients.map((client, index) => {
-                    const daysSinceLastGame = new Date().getTime() - new Date(client.lastGame).getTime()
-                    const daysDiff = Math.floor(daysSinceLastGame / (1000 * 60 * 60 * 24))
+                    const today = new Date().toISOString().split('T')[0]
+                    const lastGameDate = client.lastGame
+                    const daysDiff = Math.floor((new Date(today).getTime() - new Date(lastGameDate).getTime()) / (1000 * 60 * 60 * 24))
                     
                     let statusColor = "default"
                     let statusText = "Ativo"
