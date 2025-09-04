@@ -75,7 +75,7 @@ export function AppSidebar() {
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 bg-primary rounded flex-shrink-0 flex items-center justify-center overflow-hidden">
             <img 
-              src="/lovable-uploads/38731a3d-a73a-47b4-9b93-4a53bb3bc7ea.png" 
+              src="/lovable-uploads/6389b33f-0792-4890-b791-cec3fb95e502.png" 
               alt="Axe de Nessa" 
               className="h-full w-full object-cover"
             />
