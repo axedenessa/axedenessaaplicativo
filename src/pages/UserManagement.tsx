@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
-import { Users, Plus, Settings } from "lucide-react"
+import { Users, Plus, Trash2 } from "lucide-react"
 
 interface Profile {
   id: string
@@ -49,6 +50,48 @@ const UserManagement = () => {
         description: "Não foi possível carregar os usuários.",
         variant: "destructive"
       })
+    }
+  }
+
+  const deleteUser = async (userId: string, userName: string) => {
+    setLoading(true)
+    try {
+      // Get session token
+      const { data: sessionData } = await supabase.auth.getSession()
+      const accessToken = sessionData.session?.access_token
+
+      if (!accessToken) {
+        throw new Error('NO_SESSION_TOKEN')
+      }
+
+      // Call edge function to delete user
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId },
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      })
+
+      if (error) throw error
+
+      toast({
+        title: "Usuário removido",
+        description: `Usuário ${userName} foi removido com sucesso.`,
+      })
+
+      loadProfiles()
+    } catch (error) {
+      console.error('Error deleting user:', error)
+      const message = (error as any)?.message === 'NO_SESSION_TOKEN'
+        ? 'Sessão expirada. Faça login novamente.'
+        : ((error as any)?.message ?? 'Não foi possível remover o usuário.')
+      toast({
+        title: "Erro",
+        description: message,
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -254,6 +297,31 @@ const UserManagement = () => {
                     <Badge variant={profile.role === 'admin' ? 'default' : 'secondary'}>
                       {profile.role === 'admin' ? 'Admin' : 'Cartomante'}
                     </Badge>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Confirmar Remoção</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tem certeza que deseja remover o usuário <strong>{profile.name}</strong>? 
+                            Esta ação não pode ser desfeita e o usuário perderá acesso ao sistema.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => deleteUser(profile.user_id, profile.name)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Remover Usuário
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}
