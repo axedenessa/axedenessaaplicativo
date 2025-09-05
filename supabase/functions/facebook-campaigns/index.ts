@@ -99,39 +99,29 @@ Deno.serve(async (req) => {
 
     console.log('Processed campaigns:', campaigns)
 
-    // Store campaigns in Supabase
+    // Store campaigns in Supabase (non-blocking for response)
     if (campaigns.length > 0) {
       console.log('Storing campaigns in database...')
-      
-      // Clear existing campaigns for this date range first
-      const { error: deleteError } = await supabase
-        .from('campaigns')
-        .delete()
-        .gte('start_date', dateRange?.since || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-        .lte('end_date', dateRange?.until || new Date().toISOString().split('T')[0])
 
-      if (deleteError) {
-        console.error('Error deleting old campaigns:', deleteError)
-      }
-
-      // Insert new campaigns
-      const campaignData = campaigns.map(campaign => ({
+      // Prepare payload
+      const campaignData = campaigns.map((campaign) => ({
         name: campaign.name,
         spend: campaign.spend,
         leads: campaign.results,
         start_date: campaign.date_start,
         end_date: campaign.date_stop,
-        active: true
+        active: true,
       }))
 
-      const { error: insertError } = await supabase
+      // Use upsert to avoid unique constraint violations on name
+      const { error: upsertError } = await supabase
         .from('campaigns')
-        .insert(campaignData)
+        .upsert(campaignData, { onConflict: 'name' })
 
-      if (insertError) {
-        console.error('Error inserting campaigns:', insertError)
+      if (upsertError) {
+        console.error('Error upserting campaigns (ignored):', upsertError)
       } else {
-        console.log('Campaigns stored successfully')
+        console.log('Campaigns upserted successfully')
       }
     }
 
