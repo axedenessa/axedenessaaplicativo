@@ -1,19 +1,28 @@
 import { useState, useEffect } from "react"
-import { Users, TrendingUp, Calendar, DollarSign } from "lucide-react"
+import { Users, TrendingUp, Calendar, DollarSign, Search, ChevronLeft, ChevronRight, Eye } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { gameStore } from "@/lib/gameStore"
-import { Client } from "@/lib/types"
+import { Client, Game } from "@/lib/types"
 
 const RankingClientes = () => {
   const [clients, setClients] = useState<Client[]>([])
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [period, setPeriod] = useState('all')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+  const [clientGames, setClientGames] = useState<Game[]>([])
+  const [modalOpen, setModalOpen] = useState(false)
+  
+  const ITEMS_PER_PAGE = 10
 
   useEffect(() => {
     const updateClients = () => setClients(gameStore.getClientStats())
@@ -109,7 +118,32 @@ const RankingClientes = () => {
     }).filter(Boolean) as Client[]
   }
 
-  const filteredClients = getFilteredClients().sort((a, b) => b.totalSpent - a.totalSpent)
+  const filteredClients = getFilteredClients()
+    .filter(client => 
+      client.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => b.totalSpent - a.totalSpent)
+
+  // Pagination
+  const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const endIndex = startIndex + ITEMS_PER_PAGE
+  const paginatedClients = filteredClients.slice(startIndex, endIndex)
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm])
+
+  const handleClientClick = (client: Client) => {
+    setSelectedClient(client)
+    // Get all games for this client
+    const allClientGames = gameStore.getGames().filter(game => 
+      game.clientName === client.name && game.status === 'Jogo finalizado'
+    ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    setClientGames(allClientGames)
+    setModalOpen(true)
+  }
 
   const formatFrequency = (days: number) => {
     if (days === 0) return "Único jogo"
@@ -122,6 +156,13 @@ const RankingClientes = () => {
   const formatDate = (dateString: string) => {
     const d = parseLocalDate(dateString)
     return d.toLocaleDateString('pt-BR')
+  }
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value)
   }
 
   const totalRevenue = filteredClients.reduce((sum, client) => sum + client.totalSpent, 0)
@@ -255,33 +296,50 @@ const RankingClientes = () => {
       {/* Clients Table */}
       <Card className="shadow-card">
         <CardHeader>
-          <CardTitle>Ranking por Gasto Total</CardTitle>
-          <CardDescription>
-            Clientes ordenados por valor total gasto em consultas
-          </CardDescription>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <CardTitle>Ranking por Gasto Total</CardTitle>
+              <CardDescription>
+                Clientes ordenados por valor total gasto em consultas
+              </CardDescription>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar cliente..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-64"
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {filteredClients.length === 0 ? (
             <div className="text-center py-8">
               <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">Nenhum cliente cadastrado ainda</p>
+              <p className="text-muted-foreground">
+                {searchTerm ? 'Nenhum cliente encontrado com esse nome' : 'Nenhum cliente cadastrado ainda'}
+              </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[50px]">#</TableHead>
-                    <TableHead>Nome do Cliente</TableHead>
-                    <TableHead className="text-center">Total de Jogos</TableHead>
-                    <TableHead className="text-center">Gasto Total</TableHead>
-                    <TableHead className="text-center">Frequência Média</TableHead>
-                    <TableHead className="text-center">Último Jogo</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredClients.map((client, index) => {
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px]">#</TableHead>
+                      <TableHead>Nome do Cliente</TableHead>
+                      <TableHead className="text-center">Total de Jogos</TableHead>
+                      <TableHead className="text-center">Gasto Total</TableHead>
+                      <TableHead className="text-center">Frequência Média</TableHead>
+                      <TableHead className="text-center">Último Jogo</TableHead>
+                      <TableHead className="text-center">Status</TableHead>
+                      <TableHead className="text-center">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedClients.map((client, index) => {
                     const MS_PER_DAY = 1000 * 60 * 60 * 24
                     const now = new Date()
                     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -301,7 +359,7 @@ const RankingClientes = () => {
 
                     return (
                       <TableRow key={client.id}>
-                        <TableCell className="font-bold">{index + 1}</TableCell>
+                        <TableCell className="font-bold">{startIndex + index + 1}</TableCell>
                         <TableCell>
                           <div>
                             <p className="font-semibold">{client.name}</p>
@@ -332,15 +390,171 @@ const RankingClientes = () => {
                             {statusText}
                           </Badge>
                         </TableCell>
+                        <TableCell className="text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleClientClick(client)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     )
                   })}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Mostrando {startIndex + 1} a {Math.min(endIndex, filteredClients.length)} de {filteredClients.length} clientes
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Anterior
+                    </Button>
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {pageNum}
+                        </Button>
+                      ))}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Próximo
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
+
+      {/* Client Details Modal */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Users className="h-5 w-5" />
+              <span>Detalhes do Cliente: {selectedClient?.name}</span>
+            </DialogTitle>
+            <DialogDescription>
+              Histórico completo de jogos e consultas realizadas
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedClient && (
+            <div className="space-y-6">
+              {/* Client Summary */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-primary">{selectedClient.totalGames}</div>
+                      <div className="text-sm text-muted-foreground">Total de Jogos</div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-accent">{formatCurrency(selectedClient.totalSpent)}</div>
+                      <div className="text-sm text-muted-foreground">Gasto Total</div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-brand-purple">{formatCurrency(selectedClient.totalSpent / selectedClient.totalGames)}</div>
+                      <div className="text-sm text-muted-foreground">Ticket Médio</div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-emerald-600">{formatFrequency(selectedClient.averageFrequency)}</div>
+                      <div className="text-sm text-muted-foreground">Frequência</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Games History */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Histórico de Jogos</CardTitle>
+                  <CardDescription>Lista completa de consultas realizadas</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {clientGames.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Nenhum jogo encontrado</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Data</TableHead>
+                            <TableHead>Horário</TableHead>
+                            <TableHead>Tipo de Jogo</TableHead>
+                            <TableHead>Cartomante</TableHead>
+                            <TableHead className="text-right">Valor</TableHead>
+                            <TableHead>Campanha</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {clientGames.map((game) => (
+                            <TableRow key={game.id}>
+                              <TableCell>{formatDate(game.date)}</TableCell>
+                              <TableCell>{game.paymentTime}</TableCell>
+                              <TableCell>{game.gameType.name}</TableCell>
+                              <TableCell>{game.cartomante.name}</TableCell>
+                              <TableCell className="text-right font-semibold">{formatCurrency(game.value)}</TableCell>
+                              <TableCell>
+                                {game.campaign ? (
+                                  <Badge variant="secondary">{game.campaign}</Badge>
+                                ) : (
+                                  <span className="text-muted-foreground">-</span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Top Clients Summary */}
       {filteredClients.length > 0 && (
@@ -353,7 +567,7 @@ const RankingClientes = () => {
             <CardContent>
               <div className="space-y-2">
                 <p className="font-semibold text-primary">{filteredClients[0]?.name}</p>
-                <p className="text-2xl font-bold text-accent">R$ {filteredClients[0]?.totalSpent.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-accent">{formatCurrency(filteredClients[0]?.totalSpent || 0)}</p>
                 <p className="text-sm text-muted-foreground">
                   {filteredClients[0]?.totalGames} consultas realizadas
                 </p>
@@ -398,7 +612,7 @@ const RankingClientes = () => {
                     <>
                       <p className="font-semibold text-primary">{highestTicket?.name}</p>
                       <p className="text-2xl font-bold text-accent">
-                        R$ {((highestTicket?.totalSpent || 0) / (highestTicket?.totalGames || 1)).toFixed(2)}
+                        {formatCurrency((highestTicket?.totalSpent || 0) / (highestTicket?.totalGames || 1))}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         Ticket médio por consulta
