@@ -129,12 +129,6 @@ const CustosLucros = () => {
   // Calculate total costs
   const totalCosts = alanaCommission + totalAdSpend
 
-  // Calculate net profit
-  const netProfit = totalRevenue - totalCosts
-
-  // Profit margin
-  const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0
-
   // Break down revenue by cartomante
   const vanessaRevenue = filteredGames
     .filter(game => game.cartomante.name === 'Vanessa Barreto')
@@ -149,6 +143,12 @@ const CustosLucros = () => {
 
   // Total for Axe de Nessa (100% Vanessa + 50% Alana)
   const axeDeNessaRevenue = vanessaRevenue + axeDeNessaFromAlana
+
+  // Calculate net profit (using Axe de Nessa revenue, not total revenue)
+  const netProfit = axeDeNessaRevenue - totalCosts
+
+  // Profit margin (based on Axe de Nessa revenue)
+  const profitMargin = axeDeNessaRevenue > 0 ? (netProfit / axeDeNessaRevenue) * 100 : 0
 
   // ROI calculation
   const roi = totalCosts > 0 ? ((netProfit / totalCosts) * 100) : 0
@@ -425,25 +425,25 @@ const CustosLucros = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-6 bg-gradient-brand rounded-lg text-white">
-              <h3 className="text-lg font-semibold mb-2">Lucro Líquido</h3>
-              <p className="text-3xl font-bold mb-2">{formatCurrency(netProfit)}</p>
-              <Badge variant={netProfit >= 0 ? "default" : "destructive"}>
+            <div className="text-center p-6 bg-gradient-to-br from-primary to-primary/80 rounded-lg text-primary-foreground shadow-lg">
+              <h3 className="text-lg font-semibold mb-2 text-primary-foreground">Lucro Líquido</h3>
+              <p className="text-3xl font-bold mb-2 text-primary-foreground">{formatCurrency(netProfit)}</p>
+              <Badge variant={netProfit >= 0 ? "secondary" : "destructive"} className="bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30">
                 {netProfit >= 0 ? "Positivo" : "Negativo"}
               </Badge>
             </div>
 
-            <div className="text-center p-6 bg-muted rounded-lg">
-              <h3 className="text-lg font-semibold mb-2">Margem de Lucro</h3>
-              <p className="text-3xl font-bold mb-2">{profitMargin.toFixed(1)}%</p>
+            <div className="text-center p-6 bg-accent/10 rounded-lg border border-accent/20 shadow-lg">
+              <h3 className="text-lg font-semibold mb-2 text-accent">Margem de Lucro</h3>
+              <p className="text-3xl font-bold mb-2 text-accent">{profitMargin.toFixed(1)}%</p>
               <p className="text-sm text-muted-foreground">
                 {profitMargin >= 20 ? "Excelente" : profitMargin >= 10 ? "Boa" : "Baixa"} margem
               </p>
             </div>
 
-            <div className="text-center p-6 bg-muted rounded-lg">
-              <h3 className="text-lg font-semibold mb-2">ROI</h3>
-              <p className="text-3xl font-bold mb-2">{roi.toFixed(1)}%</p>
+            <div className="text-center p-6 bg-brand-purple/10 rounded-lg border border-brand-purple/20 shadow-lg">
+              <h3 className="text-lg font-semibold mb-2 text-brand-purple">ROI</h3>
+              <p className="text-3xl font-bold mb-2 text-brand-purple">{roi.toFixed(1)}%</p>
               <p className="text-sm text-muted-foreground">
                 Retorno sobre {formatCurrency(totalCosts)} investidos
               </p>
