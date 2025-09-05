@@ -10,6 +10,7 @@ import { gameStore } from "@/lib/gameStore"
 import { facebookAPI } from "@/lib/facebookApi"
 import { CARTOMANTES } from "@/lib/types"
 import { GameDetailsModal } from "@/components/GameDetailsModal"
+import { getCurrentTimeBR, formatDateBR } from "@/utils/timezone"
 
 const CustosLucros = () => {
   const [games, setGames] = useState(gameStore.getGames())
@@ -38,8 +39,8 @@ const CustosLucros = () => {
 
   // Set default dates based on period
   useEffect(() => {
-    const today = new Date()
-    const todayStr = today.toISOString().split('T')[0]
+    const todayBR = getCurrentTimeBR()
+    const todayStr = todayBR.toISOString().split('T')[0]
     
     switch (period) {
       case 'today':
@@ -47,18 +48,18 @@ const CustosLucros = () => {
         setEndDate(todayStr)
         break
       case 'yesterday':
-        const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000)
+        const yesterday = new Date(todayBR.getTime() - 24 * 60 * 60 * 1000)
         const yesterdayStr = yesterday.toISOString().split('T')[0]
         setStartDate(yesterdayStr)
         setEndDate(yesterdayStr)
         break
       case 'week':
-        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+        const weekAgo = new Date(todayBR.getTime() - 7 * 24 * 60 * 60 * 1000)
         setStartDate(weekAgo.toISOString().split('T')[0])
         setEndDate(todayStr)
         break
       case 'month':
-        const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+        const monthAgo = new Date(todayBR.getTime() - 30 * 24 * 60 * 60 * 1000)
         setStartDate(monthAgo.toISOString().split('T')[0])
         setEndDate(todayStr)
         break
@@ -71,9 +72,11 @@ const CustosLucros = () => {
 
   const loadCampaigns = async () => {
     try {
+      const todayBR = getCurrentTimeBR()
+      const monthAgo = new Date(todayBR.getTime() - 30 * 24 * 60 * 60 * 1000)
       let dateRange = { 
-        since: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        until: new Date().toISOString().split('T')[0]
+        since: monthAgo.toISOString().split('T')[0],
+        until: todayBR.toISOString().split('T')[0]
       }
       
       // Use filtered date range if available
