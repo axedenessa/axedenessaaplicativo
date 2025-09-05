@@ -11,6 +11,7 @@ import { facebookAPI } from "@/lib/facebookApi"
 import { CARTOMANTES } from "@/lib/types"
 import { GameDetailsModal } from "@/components/GameDetailsModal"
 import { getCurrentTimeBR, formatDateBR } from "@/utils/timezone"
+import { formatInTimeZone } from 'date-fns-tz'
 
 const CustosLucros = () => {
   const [games, setGames] = useState(gameStore.getGames())
@@ -40,7 +41,7 @@ const CustosLucros = () => {
   // Set default dates based on period
   useEffect(() => {
     const todayBR = getCurrentTimeBR()
-    const todayStr = todayBR.toISOString().split('T')[0]
+    const todayStr = formatInTimeZone(todayBR, 'America/Sao_Paulo', 'yyyy-MM-dd')
     
     switch (period) {
       case 'today':
@@ -49,18 +50,18 @@ const CustosLucros = () => {
         break
       case 'yesterday':
         const yesterday = new Date(todayBR.getTime() - 24 * 60 * 60 * 1000)
-        const yesterdayStr = yesterday.toISOString().split('T')[0]
+        const yesterdayStr = formatInTimeZone(yesterday, 'America/Sao_Paulo', 'yyyy-MM-dd')
         setStartDate(yesterdayStr)
         setEndDate(yesterdayStr)
         break
       case 'week':
         const weekAgo = new Date(todayBR.getTime() - 7 * 24 * 60 * 60 * 1000)
-        setStartDate(weekAgo.toISOString().split('T')[0])
+        setStartDate(formatInTimeZone(weekAgo, 'America/Sao_Paulo', 'yyyy-MM-dd'))
         setEndDate(todayStr)
         break
       case 'month':
         const monthAgo = new Date(todayBR.getTime() - 30 * 24 * 60 * 60 * 1000)
-        setStartDate(monthAgo.toISOString().split('T')[0])
+        setStartDate(formatInTimeZone(monthAgo, 'America/Sao_Paulo', 'yyyy-MM-dd'))
         setEndDate(todayStr)
         break
       case 'all':
@@ -75,8 +76,8 @@ const CustosLucros = () => {
       const todayBR = getCurrentTimeBR()
       const monthAgo = new Date(todayBR.getTime() - 30 * 24 * 60 * 60 * 1000)
       let dateRange = { 
-        since: monthAgo.toISOString().split('T')[0],
-        until: todayBR.toISOString().split('T')[0]
+        since: formatInTimeZone(monthAgo, 'America/Sao_Paulo', 'yyyy-MM-dd'),
+        until: formatInTimeZone(todayBR, 'America/Sao_Paulo', 'yyyy-MM-dd')
       }
       
       // Use filtered date range if available
