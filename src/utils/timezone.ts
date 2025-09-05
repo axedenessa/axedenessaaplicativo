@@ -32,7 +32,13 @@ export const convertFromUTC = (date: Date | string): Date => {
 
 // Returns today's date string in BR timezone as YYYY-MM-DD
 export const getTodayBRDateString = (): string => {
-  return formatInTimeZone(new Date(), TIMEZONE, 'yyyy-MM-dd')
+  const dtf = new Intl.DateTimeFormat('en-CA', {
+    timeZone: TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+  return dtf.format(new Date())
 }
 
 // Format a YYYY-MM-DD (stored) date as BR label, honoring Sao Paulo timezone
@@ -49,5 +55,11 @@ export const formatDateBRFromYMD = (yyyyMmDd: string): string => {
 
 // Format any JS Date into YYYY-MM-DD for BR timezone boundaries
 export const formatDateToBRYMD = (date: Date): string => {
-  return formatInTimeZone(date, TIMEZONE, 'yyyy-MM-dd')
+  const dtf = new Intl.DateTimeFormat('en-CA', {
+    timeZone: TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+  return dtf.format(date)
 }
