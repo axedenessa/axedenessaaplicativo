@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
-import { Clock, Users, DollarSign, TrendingUp, Play, CheckCircle2, Timer, Calendar, BarChart3 } from "lucide-react"
+import { Clock, Users, DollarSign, TrendingUp, Play, CheckCircle2, Timer, Calendar, BarChart3, ChevronDown, ChevronRight } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
+import { RealTimeGameTimer } from "@/components/RealTimeGameTimer"
 
 interface Game {
   id: string
@@ -44,6 +45,8 @@ const CartomanteDashboard = () => {
   const [currentGame, setCurrentGame] = useState<Game | null>(null)
   const [loading, setLoading] = useState(false)
   const [selectedDate, setSelectedDate] = useState('')
+  const [expandedDay, setExpandedDay] = useState<string | null>(null)
+  const [dayGames, setDayGames] = useState<Game[]>([])
   const { user } = useAuth()
   const { toast } = useToast()
 
@@ -238,6 +241,32 @@ const CartomanteDashboard = () => {
     }
   }
 
+  const loadDayGames = async (date: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('games')
+        .select('*')
+        .eq('cartomante', cartomanteId as any)
+        .eq('game_date', date)
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      setDayGames(data || [])
+    } catch (error) {
+      console.error('Error loading day games:', error)
+    }
+  }
+
+  const toggleDayExpansion = async (date: string) => {
+    if (expandedDay === date) {
+      setExpandedDay(null)
+      setDayGames([])
+    } else {
+      setExpandedDay(date)
+      await loadDayGames(date)
+    }
+  }
+
   const startGame = async (gameId: string) => {
     setLoading(true)
     try {
@@ -419,9 +448,17 @@ const CartomanteDashboard = () => {
                 <p className="text-sm text-muted-foreground">
                   {getGameTypeLabel(currentGame.game_type)} • R$ {Number(currentGame.value).toFixed(2)}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  Iniciado às {currentGame.started_at ? new Date(currentGame.started_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
-                </p>
+                <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                  <span>
+                    Iniciado às {currentGame.started_at ? new Date(currentGame.started_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                  </span>
+                  {currentGame.started_at && (
+                    <div className="flex items-center space-x-1">
+                      <span>•</span>
+                      <RealTimeGameTimer startTime={currentGame.started_at} />
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex items-center space-x-2">
                 {currentGame.conversation_link && (
@@ -544,28 +581,77 @@ const CartomanteDashboard = () => {
               ) : (
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {dailyHistory.map((day) => (
-                    <div key={day.date} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <div>
-                        <p className="font-medium">
-                          {new Date(day.date).toLocaleDateString('pt-BR', { 
-                            weekday: 'short', 
-                            day: '2-digit', 
-                            month: '2-digit',
-                            year: 'numeric'
-                          })}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {day.totalGames} jogos • {day.completedGames} finalizados
-                          {day.averageTime > 0 && ` • ${formatTime(day.averageTime)} médio`}
-                        </p>
+                    <div key={day.date}>
+                      <div 
+                        className="flex items-center justify-between p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"
+                        onClick={() => toggleDayExpansion(day.date)}
+                      >
+                        <div className="flex items-center space-x-2">
+                          {expandedDay === day.date ? (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          )}
+                          <div>
+                            <p className="font-medium">
+                              {new Date(day.date).toLocaleDateString('pt-BR', { 
+                                weekday: 'short', 
+                                day: '2-digit', 
+                                month: '2-digit',
+                                year: 'numeric'
+                              })}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {day.totalGames} jogos • {day.completedGames} finalizados
+                              {day.averageTime > 0 && ` • ${formatTime(day.averageTime)} médio`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-lg">R$ {day.totalEarnings.toFixed(2)}</p>
+                          <Badge variant={day.date === new Date().toISOString().split('T')[0] ? 'default' : 'secondary'}>
+                            {day.date === new Date().toISOString().split('T')[0] ? 'Hoje' : 
+                             day.totalEarnings > 100 ? 'Bom dia' : 'Dia normal'}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-lg">R$ {day.totalEarnings.toFixed(2)}</p>
-                        <Badge variant={day.date === new Date().toISOString().split('T')[0] ? 'default' : 'secondary'}>
-                          {day.date === new Date().toISOString().split('T')[0] ? 'Hoje' : 
-                           day.totalEarnings > 100 ? 'Bom dia' : 'Dia normal'}
-                        </Badge>
-                      </div>
+                      
+                      {/* Expanded day details */}
+                      {expandedDay === day.date && (
+                        <div className="ml-6 mt-2 space-y-2">
+                          {dayGames.length === 0 ? (
+                            <p className="text-sm text-muted-foreground p-2">Carregando jogos...</p>
+                          ) : (
+                            dayGames.map((game) => (
+                              <div key={game.id} className="p-3 bg-background border rounded-lg">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="font-medium">{game.client_name}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {getGameTypeLabel(game.game_type)} • {game.payment_time}
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="font-bold">R$ {Number(game.value).toFixed(2)}</p>
+                                    <Badge variant={
+                                      game.status === 'jogo_finalizado' ? 'default' : 
+                                      game.status === 'em_jogo' ? 'secondary' : 'outline'
+                                    }>
+                                      {game.status === 'jogo_finalizado' ? 'Finalizado' : 
+                                       game.status === 'em_jogo' ? 'Em andamento' : 'Na fila'}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                {game.status === 'jogo_finalizado' && game.started_at && game.finished_at && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Duração: {formatTime((new Date(game.finished_at).getTime() - new Date(game.started_at).getTime()) / (1000 * 60))}
+                                  </p>
+                                )}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
