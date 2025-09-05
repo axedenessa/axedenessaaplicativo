@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { Clock, Users, DollarSign, TrendingUp, Play, CheckCircle2, Timer, Calendar, BarChart3, ChevronDown, ChevronRight } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { RealTimeGameTimer } from "@/components/RealTimeGameTimer"
+import { getCurrentTimeBR, getTodayBRDateString, formatDateToBRYMD, formatDateBRFromYMD, formatBRDateLabel } from "@/utils/timezone"
 
 interface Game {
   id: string
@@ -116,7 +117,7 @@ const CartomanteDashboard = () => {
   }
 
   const loadTodayStats = async () => {
-    const today = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD format
+    const today = getTodayBRDateString()
     
     try {
       const { data, error } = await supabase
@@ -159,10 +160,10 @@ const CartomanteDashboard = () => {
   const loadDailyHistory = async () => {
     try {
       // Get last 30 days of data
-      const today = new Date()
-      const thirtyDaysAgo = new Date(today)
+      const todayBR = getCurrentTimeBR()
+      const thirtyDaysAgo = new Date(todayBR)
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-      const startDate = thirtyDaysAgo.toLocaleDateString('en-CA')
+      const startDate = formatDateToBRYMD(thirtyDaysAgo)
       
       const { data, error } = await supabase
         .from('games')
@@ -509,7 +510,7 @@ const CartomanteDashboard = () => {
                         {getGameTypeLabel(game.game_type)} • R$ {Number(game.value).toFixed(2)}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Pagamento: {game.payment_time} • {new Date(game.game_date).toLocaleDateString('pt-BR')}
+                        Pagamento: {game.payment_time} • {formatDateBRFromYMD(game.game_date)}
                       </p>
                     </div>
                   </div>
@@ -549,7 +550,7 @@ const CartomanteDashboard = () => {
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  max={new Date().toLocaleDateString('en-CA')}
+                  max={getTodayBRDateString()}
                 />
               </div>
               <Button 
@@ -558,7 +559,7 @@ const CartomanteDashboard = () => {
                     const stats = await loadDateStats(selectedDate)
                     if (stats) {
                       toast({
-                        title: `Estatísticas de ${new Date(selectedDate).toLocaleDateString('pt-BR')}`,
+                        title: `Estatísticas de ${formatDateBRFromYMD(selectedDate)}`,
                         description: `${stats.totalGames} jogos • R$ ${stats.totalEarnings.toFixed(2)} • ${stats.completedGames} finalizados`,
                       })
                     }
@@ -595,12 +596,7 @@ const CartomanteDashboard = () => {
                           )}
                           <div>
                             <p className="font-medium">
-                              {new Date(day.date).toLocaleDateString('pt-BR', { 
-                                weekday: 'short', 
-                                day: '2-digit', 
-                                month: '2-digit',
-                                year: 'numeric'
-                              })}
+                              {formatBRDateLabel(day.date, 'EEE, dd/MM/yyyy')}
                             </p>
                             <p className="text-sm text-muted-foreground">
                               {day.totalGames} jogos • {day.completedGames} finalizados
@@ -610,8 +606,8 @@ const CartomanteDashboard = () => {
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-lg">R$ {day.totalEarnings.toFixed(2)}</p>
-                          <Badge variant={day.date === new Date().toLocaleDateString('en-CA') ? 'default' : 'secondary'}>
-                            {day.date === new Date().toLocaleDateString('en-CA') ? 'Hoje' : 
+                          <Badge variant={day.date === getTodayBRDateString() ? 'default' : 'secondary'}>
+                            {day.date === getTodayBRDateString() ? 'Hoje' : 
                              day.totalEarnings > 100 ? 'Bom dia' : 'Dia normal'}
                           </Badge>
                         </div>
