@@ -52,8 +52,43 @@ serve(async (req) => {
       )
     }
 
-    // Parse the request body
-    const { email, name, role, cartomante_id, password } = await req.json()
+    // Parse and sanitize request body
+    const { email: rawEmail, name: rawName, role, cartomante_id, password } = await req.json()
+    
+    // Sanitize inputs
+    const email = (rawEmail || '').trim().toLowerCase()
+    const name = (rawName || '').trim()
+    
+    // Validate required fields
+    if (!email) {
+      return new Response(
+        JSON.stringify({ error: 'Email é obrigatório' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    if (!name) {
+      return new Response(
+        JSON.stringify({ error: 'Nome é obrigatório' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    if (!password || password.length < 6) {
+      return new Response(
+        JSON.stringify({ error: 'Senha deve ter pelo menos 6 caracteres' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    if (!role) {
+      return new Response(
+        JSON.stringify({ error: 'Perfil é obrigatório' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    console.log('Creating user with email:', email, 'name:', name, 'role:', role)
 
     // Try to create the new user (or handle existing email)
     let { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -65,6 +100,8 @@ serve(async (req) => {
 
     // Handle duplicate email by updating existing user
     if (authError) {
+      console.log('Auth error occurred:', authError.status, authError.message)
+      
       const msg = (authError.message || '').toLowerCase()
       const isDuplicate = authError.status === 422
         || msg.includes('already been registered')
@@ -74,27 +111,44 @@ serve(async (req) => {
         || msg.includes('email already')
 
       if (isDuplicate) {
+        console.log('Email already exists, updating existing user...')
+        
         // Find existing user by email
         const { data: userList, error: getUserError } = await supabaseAdmin.auth.admin.listUsers({
           page: 1,
           perPage: 1000,
         })
-        if (getUserError) throw getUserError
+        if (getUserError) {
+          console.error('Error listing users:', getUserError)
+          throw new Error(`Erro ao buscar usuários: ${getUserError.message}`)
+        }
 
         const userToUpdate = userList?.users?.find((u: any) => (u.email || '').toLowerCase() === email.toLowerCase())
-        if (!userToUpdate) throw new Error('User with this email not found')
+        if (!userToUpdate) {
+          console.error('User not found with email:', email)
+          throw new Error('Usuário com este email não foi encontrado')
+        }
 
+        console.log('Found existing user, updating...')
+        
         // Update password and metadata
         const { data: updatedUser, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userToUpdate.id, {
           password,
           user_metadata: { name }
         })
-        if (updateError) throw updateError
+        if (updateError) {
+          console.error('Error updating user:', updateError)
+          throw new Error(`Erro ao atualizar usuário: ${updateError.message}`)
+        }
 
+        console.log('User updated successfully')
         authData = { user: updatedUser.user }
       } else {
-        throw authError
+        console.error('Non-duplicate auth error:', authError)
+        throw new Error(`Erro de autenticação: ${authError.message}`)
       }
+    } else {
+      console.log('New user created successfully')
     }
 
     // Ensure profile exists and is updated with role info
