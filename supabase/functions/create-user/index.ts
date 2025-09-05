@@ -29,9 +29,20 @@ serve(async (req) => {
       }
     )
 
-    // Verify the user making the request is an admin
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
+    // Create a Supabase client as the current user (uses JWT from the request)
+    const supabaseUser = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: { headers: { Authorization: authHeader } },
+        auth: { autoRefreshToken: false, persistSession: false }
+      }
+    )
+
+    // Verify the user making the request using the JWT from the header
+    const { data: { user }, error: userError } = await supabaseUser.auth.getUser()
     if (userError || !user) {
+      console.error('Unauthorized - invalid or missing JWT', userError)
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -39,15 +50,16 @@ serve(async (req) => {
     }
 
     // Check if user has admin role
-    const { data: profile, error: profileError } = await supabaseAdmin
+    const { data: profile, error: profileError } = await supabaseUser
       .from('profiles')
       .select('role')
       .eq('user_id', user.id)
-      .single()
+      .maybeSingle()
 
     if (profileError || profile?.role !== 'admin') {
+      console.error('Forbidden - user is not admin or profile not found', profileError)
       return new Response(
-        JSON.stringify({ error: 'Insufficient permissions' }),
+        JSON.stringify({ error: 'Permissões insuficientes' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
