@@ -241,12 +241,12 @@ const NovoJogo = () => {
       <Card className="shadow-card">
         <CardHeader>
           <CardTitle className="text-lg">Tabela de Preços</CardTitle>
-          <CardDescription>Valores que o cliente paga (sempre integral). O desconto da Alana é no pagamento a ela.</CardDescription>
+          <CardDescription>O cliente sempre paga o valor integral. O desconto é apenas na comissão que a cartomante recebe.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div>
-              <h4 className="font-semibold mb-2">Preços para Cliente (Sempre Integral)</h4>
+              <h4 className="font-semibold mb-2">Valores que o Cliente Paga</h4>
               <div className="space-y-1 text-sm">
                 {GAME_TYPES.map(gameType => (
                   <div key={gameType.id} className="flex justify-between">
