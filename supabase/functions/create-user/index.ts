@@ -55,8 +55,8 @@ serve(async (req) => {
     // Parse the request body
     const { email, name, role, cartomante_id, password } = await req.json()
 
-    // Create the new user
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    // Try to create the new user
+    let { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
@@ -65,22 +65,56 @@ serve(async (req) => {
       }
     })
 
-    if (authError) {
+    // If email already exists, update the existing user
+    if (authError && authError.message.includes('email_exists')) {
+      // Get the existing user by email
+      const { data: existingUser, error: getUserError } = await supabaseAdmin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000
+      })
+
+      if (getUserError) {
+        throw getUserError
+      }
+
+      const userToUpdate = existingUser.users.find(u => u.email === email)
+      if (!userToUpdate) {
+        throw new Error('User not found')
+      }
+
+      // Update the existing user's password and metadata
+      const { data: updatedUser, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+        userToUpdate.id,
+        {
+          password,
+          user_metadata: {
+            name
+          }
+        }
+      )
+
+      if (updateError) {
+        throw updateError
+      }
+
+      authData = { user: updatedUser.user }
+    } else if (authError) {
       throw authError
     }
 
-    // Update the profile with role information
+    // Update/insert the profile with role information
     if (authData.user) {
-      const { error: profileUpdateError } = await supabaseAdmin
+      const { error: profileUpsertError } = await supabaseAdmin
         .from('profiles')
-        .update({
+        .upsert({
+          user_id: authData.user.id,
+          name,
           role,
           cartomante_id: role === 'cartomante' ? cartomante_id : null
         })
-        .eq('user_id', authData.user.id)
 
-      if (profileUpdateError) {
-        throw profileUpdateError
+      if (profileUpsertError) {
+        throw profileUpsertError
       }
     }
 
