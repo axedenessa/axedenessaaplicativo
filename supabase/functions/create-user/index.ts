@@ -40,7 +40,7 @@ serve(async (req) => {
     )
 
     // Verify the user making the request using the JWT from the header
-    const { data: { user }, error: userError } = await supabaseUser.auth.getUser(token)
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
     if (userError || !user) {
       console.error('Unauthorized - invalid or missing JWT', userError)
       return new Response(
