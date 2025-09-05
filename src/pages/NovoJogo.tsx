@@ -9,6 +9,7 @@ import { gameStore } from "@/lib/gameStore"
 import { GAME_TYPES, CARTOMANTES, GAME_STATUSES } from "@/lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { UserPlus } from "lucide-react"
+import { formatInTimeZone } from 'date-fns-tz/formatInTimeZone'
 
 const NovoJogo = () => {
   const navigate = useNavigate()
@@ -18,8 +19,8 @@ const NovoJogo = () => {
     clientName: '',
     gameTypeId: '',
     cartomanteId: '',
-    date: new Date().toISOString().split('T')[0],
-    paymentTime: new Date().toTimeString().slice(0, 5),
+    date: formatInTimeZone(new Date(), 'America/Sao_Paulo', 'yyyy-MM-dd'),
+    paymentTime: formatInTimeZone(new Date(), 'America/Sao_Paulo', 'HH:mm'),
     status: 'Na fila' as const,
     campaign: '',
     conversationLink: ''
@@ -69,8 +70,8 @@ const NovoJogo = () => {
       clientName: '',
       gameTypeId: '',
       cartomanteId: '',
-      date: new Date().toISOString().split('T')[0],
-      paymentTime: new Date().toTimeString().slice(0, 5),
+      date: formatInTimeZone(new Date(), 'America/Sao_Paulo', 'yyyy-MM-dd'),
+      paymentTime: formatInTimeZone(new Date(), 'America/Sao_Paulo', 'HH:mm'),
       status: 'Na fila',
       campaign: '',
       conversationLink: ''
