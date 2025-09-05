@@ -55,66 +55,78 @@ serve(async (req) => {
     // Parse the request body
     const { email, name, role, cartomante_id, password } = await req.json()
 
-    // Try to create the new user
+    // Try to create the new user (or handle existing email)
     let { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: {
-        name
-      }
+      user_metadata: { name }
     })
 
-    // If email already exists, update the existing user
-    if (authError && authError.message.includes('email_exists')) {
-      // Get the existing user by email
-      const { data: existingUser, error: getUserError } = await supabaseAdmin.auth.admin.listUsers({
-        page: 1,
-        perPage: 1000
-      })
+    // Handle duplicate email by updating existing user
+    if (authError) {
+      const msg = (authError.message || '').toLowerCase()
+      const isDuplicate = authError.status === 422
+        || msg.includes('already been registered')
+        || msg.includes('already registered')
+        || msg.includes('user already registered')
+        || msg.includes('email exists')
+        || msg.includes('email already')
 
-      if (getUserError) {
-        throw getUserError
-      }
+      if (isDuplicate) {
+        // Find existing user by email
+        const { data: userList, error: getUserError } = await supabaseAdmin.auth.admin.listUsers({
+          page: 1,
+          perPage: 1000,
+        })
+        if (getUserError) throw getUserError
 
-      const userToUpdate = existingUser.users.find(u => u.email === email)
-      if (!userToUpdate) {
-        throw new Error('User not found')
-      }
+        const userToUpdate = userList?.users?.find((u: any) => (u.email || '').toLowerCase() === email.toLowerCase())
+        if (!userToUpdate) throw new Error('User with this email not found')
 
-      // Update the existing user's password and metadata
-      const { data: updatedUser, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-        userToUpdate.id,
-        {
+        // Update password and metadata
+        const { data: updatedUser, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userToUpdate.id, {
           password,
-          user_metadata: {
-            name
-          }
-        }
-      )
+          user_metadata: { name }
+        })
+        if (updateError) throw updateError
 
-      if (updateError) {
-        throw updateError
+        authData = { user: updatedUser.user }
+      } else {
+        throw authError
       }
-
-      authData = { user: updatedUser.user }
-    } else if (authError) {
-      throw authError
     }
 
-    // Update/insert the profile with role information
+    // Ensure profile exists and is updated with role info
     if (authData.user) {
-      const { error: profileUpsertError } = await supabaseAdmin
+      // Try update first
+      const { data: existingProfile, error: fetchProfileError } = await supabaseAdmin
         .from('profiles')
-        .upsert({
-          user_id: authData.user.id,
-          name,
-          role,
-          cartomante_id: role === 'cartomante' ? cartomante_id : null
-        })
+        .select('id')
+        .eq('user_id', authData.user.id)
+        .maybeSingle()
+      if (fetchProfileError) throw fetchProfileError
 
-      if (profileUpsertError) {
-        throw profileUpsertError
+      if (existingProfile) {
+        const { error: profileUpdateError } = await supabaseAdmin
+          .from('profiles')
+          .update({
+            name,
+            role,
+            cartomante_id: role === 'cartomante' ? cartomante_id : null
+          })
+          .eq('user_id', authData.user.id)
+        if (profileUpdateError) throw profileUpdateError
+      } else {
+        const { error: profileInsertError } = await supabaseAdmin
+          .from('profiles')
+          .insert({
+            user_id: authData.user.id,
+            name,
+            role,
+            cartomante_id: role === 'cartomante' ? cartomante_id : null
+          })
+        if (profileInsertError) throw profileInsertError
       }
     }
 
