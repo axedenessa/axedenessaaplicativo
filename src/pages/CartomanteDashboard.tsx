@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
-import { Clock, Users, DollarSign, TrendingUp, Play, CheckCircle2, Timer } from "lucide-react"
+import { Clock, Users, DollarSign, TrendingUp, Play, CheckCircle2, Timer, Calendar, BarChart3 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 
 interface Game {
@@ -21,6 +23,14 @@ interface Game {
   created_at: string
 }
 
+interface DailySummary {
+  date: string
+  totalGames: number
+  totalEarnings: number
+  completedGames: number
+  averageTime: number
+}
+
 const CartomanteDashboard = () => {
   const [queueGames, setQueueGames] = useState<Game[]>([])
   const [todayStats, setTodayStats] = useState({
@@ -29,8 +39,10 @@ const CartomanteDashboard = () => {
     completedGames: 0,
     averageTime: 0
   })
+  const [dailyHistory, setDailyHistory] = useState<DailySummary[]>([])
   const [currentGame, setCurrentGame] = useState<Game | null>(null)
   const [loading, setLoading] = useState(false)
+  const [selectedDate, setSelectedDate] = useState('')
   const { user } = useAuth()
   const { toast } = useToast()
 
@@ -46,6 +58,7 @@ const CartomanteDashboard = () => {
       loadQueueGames()
       loadTodayStats()
       loadCurrentGame()
+      loadDailyHistory()
     }
   }, [cartomanteId])
 
@@ -139,6 +152,91 @@ const CartomanteDashboard = () => {
     }
   }
 
+  const loadDailyHistory = async () => {
+    try {
+      // Get last 30 days of data
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+      const startDate = thirtyDaysAgo.toISOString().split('T')[0]
+      
+      const { data, error } = await supabase
+        .from('games')
+        .select('*')
+        .eq('cartomante', cartomanteId as any)
+        .gte('game_date', startDate)
+        .order('game_date', { ascending: false })
+      
+      if (error) throw error
+      
+      // Group by date and calculate stats
+      const groupedByDate: Record<string, Game[]> = {}
+      data?.forEach(game => {
+        const date = game.game_date
+        if (!groupedByDate[date]) {
+          groupedByDate[date] = []
+        }
+        groupedByDate[date].push(game)
+      })
+      
+      const history: DailySummary[] = Object.entries(groupedByDate).map(([date, games]) => {
+        const completed = games.filter(g => g.status === 'jogo_finalizado')
+        const totalEarnings = games.reduce((sum, game) => sum + Number(game.value), 0)
+        
+        // Calculate average time for completed games
+        let totalMinutes = 0
+        let gamesWithTime = 0
+        
+        completed.forEach(game => {
+          if (game.started_at && game.finished_at) {
+            const start = new Date(game.started_at)
+            const end = new Date(game.finished_at)
+            const minutes = (end.getTime() - start.getTime()) / (1000 * 60)
+            totalMinutes += minutes
+            gamesWithTime++
+          }
+        })
+        
+        return {
+          date,
+          totalGames: games.length,
+          totalEarnings,
+          completedGames: completed.length,
+          averageTime: gamesWithTime > 0 ? totalMinutes / gamesWithTime : 0
+        }
+      })
+      
+      setDailyHistory(history)
+    } catch (error) {
+      console.error('Error loading daily history:', error)
+    }
+  }
+
+  const loadDateStats = async (date: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('games')
+        .select('*')
+        .eq('cartomante', cartomanteId as any)
+        .eq('game_date', date)
+      
+      if (error) throw error
+      
+      const games = data || []
+      const completed = games.filter(g => g.status === 'jogo_finalizado')
+      const totalEarnings = games.reduce((sum, game) => sum + Number(game.value), 0)
+      
+      return {
+        totalGames: games.length,
+        totalEarnings,
+        completedGames: completed.length,
+        games
+      }
+    } catch (error) {
+      console.error('Error loading date stats:', error)
+      return null
+    }
+  }
+
   const startGame = async (gameId: string) => {
     setLoading(true)
     try {
@@ -160,6 +258,7 @@ const CartomanteDashboard = () => {
       loadQueueGames()
       loadCurrentGame()
       loadTodayStats()
+      loadDailyHistory()
     } catch (error) {
       console.error('Error starting game:', error)
       toast({
@@ -193,6 +292,7 @@ const CartomanteDashboard = () => {
       loadQueueGames()
       loadCurrentGame()
       loadTodayStats()
+      loadDailyHistory()
     } catch (error) {
       console.error('Error finishing game:', error)
       toast({
@@ -365,6 +465,110 @@ const CartomanteDashboard = () => {
               ))}
             </div>
           )}
+        </CardContent>
+      </Card>
+      {/* Histórico de Faturamento */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <BarChart3 className="h-5 w-5 text-primary" />
+            <span>Histórico de Faturamento</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Filtro por data específica */}
+            <div className="flex items-center space-x-4">
+              <div className="flex-1">
+                <Label htmlFor="date-filter">Consultar data específica</Label>
+                <Input
+                  id="date-filter"
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <Button 
+                onClick={async () => {
+                  if (selectedDate) {
+                    const stats = await loadDateStats(selectedDate)
+                    if (stats) {
+                      toast({
+                        title: `Estatísticas de ${new Date(selectedDate).toLocaleDateString('pt-BR')}`,
+                        description: `${stats.totalGames} jogos • R$ ${stats.totalEarnings.toFixed(2)} • ${stats.completedGames} finalizados`,
+                      })
+                    }
+                  }
+                }}
+                disabled={!selectedDate}
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                Consultar
+              </Button>
+            </div>
+
+            {/* Lista dos últimos dias */}
+            <div>
+              <h4 className="font-semibold mb-3">Últimos 30 dias</h4>
+              {dailyHistory.length === 0 ? (
+                <div className="text-center py-8">
+                  <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Nenhum histórico encontrado</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {dailyHistory.map((day) => (
+                    <div key={day.date} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <div>
+                        <p className="font-medium">
+                          {new Date(day.date).toLocaleDateString('pt-BR', { 
+                            weekday: 'short', 
+                            day: '2-digit', 
+                            month: '2-digit',
+                            year: 'numeric'
+                          })}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {day.totalGames} jogos • {day.completedGames} finalizados
+                          {day.averageTime > 0 && ` • ${formatTime(day.averageTime)} médio`}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-lg">R$ {day.totalEarnings.toFixed(2)}</p>
+                        <Badge variant={day.date === new Date().toISOString().split('T')[0] ? 'default' : 'secondary'}>
+                          {day.date === new Date().toISOString().split('T')[0] ? 'Hoje' : 
+                           day.totalEarnings > 100 ? 'Bom dia' : 'Dia normal'}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Resumo semanal/mensal */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+              <div className="text-center p-4 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">Últimos 7 dias</p>
+                <p className="text-2xl font-bold text-primary">
+                  R$ {dailyHistory.slice(0, 7).reduce((sum, day) => sum + day.totalEarnings, 0).toFixed(2)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {dailyHistory.slice(0, 7).reduce((sum, day) => sum + day.totalGames, 0)} jogos
+                </p>
+              </div>
+              <div className="text-center p-4 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">Últimos 30 dias</p>
+                <p className="text-2xl font-bold text-primary">
+                  R$ {dailyHistory.reduce((sum, day) => sum + day.totalEarnings, 0).toFixed(2)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {dailyHistory.reduce((sum, day) => sum + day.totalGames, 0)} jogos
+                </p>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
