@@ -21,6 +21,7 @@ interface Game {
   started_at?: string
   finished_at?: string
   created_at: string
+  conversation_link?: string
 }
 
 interface DailySummary {
@@ -240,6 +241,15 @@ const CartomanteDashboard = () => {
   const startGame = async (gameId: string) => {
     setLoading(true)
     try {
+      // First get the game to check if it has a conversation link
+      const { data: gameData, error: fetchError } = await supabase
+        .from('games')
+        .select('conversation_link')
+        .eq('id', gameId)
+        .single()
+      
+      if (fetchError) throw fetchError
+      
       const { error } = await supabase
         .from('games')
         .update({ 
@@ -249,6 +259,11 @@ const CartomanteDashboard = () => {
         .eq('id', gameId)
       
       if (error) throw error
+      
+      // Open conversation link if it exists
+      if (gameData.conversation_link) {
+        window.open(gameData.conversation_link, '_blank')
+      }
       
       toast({
         title: "Jogo iniciado",
@@ -408,10 +423,20 @@ const CartomanteDashboard = () => {
                   Iniciado às {currentGame.started_at ? new Date(currentGame.started_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
                 </p>
               </div>
-              <Button onClick={() => finishGame(currentGame.id)} disabled={loading}>
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                Finalizar Jogo
-              </Button>
+              <div className="flex items-center space-x-2">
+                {currentGame.conversation_link && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => window.open(currentGame.conversation_link, '_blank')}
+                  >
+                    Abrir Conversa
+                  </Button>
+                )}
+                <Button onClick={() => finishGame(currentGame.id)} disabled={loading}>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Finalizar Jogo
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
