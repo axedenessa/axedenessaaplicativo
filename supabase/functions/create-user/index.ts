@@ -50,7 +50,7 @@ serve(async (req) => {
     }
 
     // Check if user has admin role
-    const { data: profile, error: profileError } = await supabaseUser
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role')
       .eq('user_id', user.id)

@@ -73,7 +73,15 @@ const UserManagement = () => {
 
     setLoading(true)
     try {
-      // Call edge function to create user
+      // Ensure we have a valid session token to authorize the Edge Function call
+      const { data: sessionData } = await supabase.auth.getSession()
+      const accessToken = sessionData.session?.access_token
+
+      if (!accessToken) {
+        throw new Error('NO_SESSION_TOKEN')
+      }
+
+      // Call edge function to create user with explicit Authorization header
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
           email: newUserEmail,
@@ -81,6 +89,9 @@ const UserManagement = () => {
           password: newUserPassword,
           role: newUserRole,
           cartomante_id: newUserRole === 'cartomante' ? newUserCartomanteId : null
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`
         }
       })
 
@@ -101,9 +112,12 @@ const UserManagement = () => {
       loadProfiles()
     } catch (error) {
       console.error('Error creating user:', error)
+      const message = (error as any)?.message === 'NO_SESSION_TOKEN'
+        ? 'Sessão expirada. Faça login novamente.'
+        : ((error as any)?.message ?? 'Não foi possível criar o usuário.')
       toast({
         title: "Erro",
-        description: "Não foi possível criar o usuário.",
+        description: message,
         variant: "destructive"
       })
     } finally {
