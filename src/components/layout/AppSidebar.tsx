@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom"
+import { useState, useEffect } from "react"
 import {
   Calendar,
   BarChart3,
@@ -8,7 +9,9 @@ import {
   Home,
   Facebook,
   Users,
-  Target
+  Target,
+  Timer,
+  Play
 } from "lucide-react"
 
 import {
@@ -23,8 +26,10 @@ import {
   SidebarHeader,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { useAuth } from "@/contexts/AuthContext"
+import { supabase } from "@/integrations/supabase/client"
 
-const navigationItems = [
+const adminNavigationItems = [
   {
     title: "Dashboard",
     url: "/",
@@ -62,12 +67,45 @@ const navigationItems = [
   },
 ]
 
+const cartomanteNavigationItems = [
+  {
+    title: "Meu Painel",
+    url: "/cartomante-dashboard",
+    icon: Home,
+  },
+]
+
 export function AppSidebar() {
   const { state } = useSidebar()
+  const { user } = useAuth()
   const location = useLocation()
   const currentPath = location.pathname
+  const [userRole, setUserRole] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (user) {
+      getUserRole()
+    }
+  }, [user])
+
+  const getUserRole = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', user?.id)
+        .single()
+      
+      if (error) throw error
+      setUserRole(data.role)
+    } catch (error) {
+      console.error('Error loading user role:', error)
+    }
+  }
 
   const isActive = (path: string) => currentPath === path
+  
+  const navigationItems = userRole === 'admin' ? adminNavigationItems : cartomanteNavigationItems
 
   return (
     <Sidebar className="border-r border-sidebar-border">

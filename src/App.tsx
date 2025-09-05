@@ -17,6 +17,7 @@ import Campanhas from "./pages/Campanhas";
 import RelatorioFinanceiro from "./pages/RelatorioFinanceiro";
 import CustosLucros from "./pages/CustosLucros";
 import UserManagement from "./pages/UserManagement";
+import CartomanteDashboard from "./pages/CartomanteDashboard";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import EmployeeAccess from "./pages/EmployeeAccess";
@@ -59,14 +60,15 @@ const AppContent = () => {
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/employee" element={<ProtectedRoute><EmployeeAccess /></ProtectedRoute>} />
-              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-              <Route path="/novo-jogo" element={<ProtectedRoute><NovoJogo /></ProtectedRoute>} />
-              <Route path="/ranking" element={<ProtectedRoute><RankingClientes /></ProtectedRoute>} />
-              <Route path="/campanhas" element={<ProtectedRoute><Campanhas /></ProtectedRoute>} />
-              <Route path="/relatorio-financeiro" element={<ProtectedRoute><RelatorioFinanceiro /></ProtectedRoute>} />
-            <Route path="/custos-lucros" element={<ProtectedRoute><CustosLucros /></ProtectedRoute>} />
-            <Route path="/usuarios" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
+              <Route path="/cartomante-dashboard" element={<ProtectedRoute><CartomanteDashboard /></ProtectedRoute>} />
+              <Route path="/" element={<ProtectedRoute adminOnly><Index /></ProtectedRoute>} />
+              <Route path="/novo-jogo" element={<ProtectedRoute adminOnly><NovoJogo /></ProtectedRoute>} />
+              <Route path="/ranking" element={<ProtectedRoute adminOnly><RankingClientes /></ProtectedRoute>} />
+              <Route path="/campanhas" element={<ProtectedRoute adminOnly><Campanhas /></ProtectedRoute>} />
+              <Route path="/relatorio-financeiro" element={<ProtectedRoute adminOnly><RelatorioFinanceiro /></ProtectedRoute>} />
+              <Route path="/custos-lucros" element={<ProtectedRoute adminOnly><CustosLucros /></ProtectedRoute>} />
+              <Route path="/usuarios" element={<ProtectedRoute adminOnly><UserManagement /></ProtectedRoute>} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
         </main>
