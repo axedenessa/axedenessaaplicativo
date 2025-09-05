@@ -116,7 +116,7 @@ const CartomanteDashboard = () => {
   }
 
   const loadTodayStats = async () => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD format
     
     try {
       const { data, error } = await supabase
@@ -159,9 +159,10 @@ const CartomanteDashboard = () => {
   const loadDailyHistory = async () => {
     try {
       // Get last 30 days of data
-      const thirtyDaysAgo = new Date()
+      const today = new Date()
+      const thirtyDaysAgo = new Date(today)
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-      const startDate = thirtyDaysAgo.toISOString().split('T')[0]
+      const startDate = thirtyDaysAgo.toLocaleDateString('en-CA')
       
       const { data, error } = await supabase
         .from('games')
@@ -548,7 +549,7 @@ const CartomanteDashboard = () => {
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  max={new Date().toISOString().split('T')[0]}
+                  max={new Date().toLocaleDateString('en-CA')}
                 />
               </div>
               <Button 
@@ -609,8 +610,8 @@ const CartomanteDashboard = () => {
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-lg">R$ {day.totalEarnings.toFixed(2)}</p>
-                          <Badge variant={day.date === new Date().toISOString().split('T')[0] ? 'default' : 'secondary'}>
-                            {day.date === new Date().toISOString().split('T')[0] ? 'Hoje' : 
+                          <Badge variant={day.date === new Date().toLocaleDateString('en-CA') ? 'default' : 'secondary'}>
+                            {day.date === new Date().toLocaleDateString('en-CA') ? 'Hoje' : 
                              day.totalEarnings > 100 ? 'Bom dia' : 'Dia normal'}
                           </Badge>
                         </div>
