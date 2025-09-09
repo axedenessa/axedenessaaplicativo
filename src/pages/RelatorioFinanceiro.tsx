@@ -9,6 +9,7 @@ import { gameStore } from "@/lib/gameStore"
 import { CARTOMANTES, GAME_TYPES } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
 import { PDFReport } from "@/components/PDFReport"
+import { getTodayBRDateString, formatDateToBRYMD } from "@/utils/timezone"
 
 const RelatorioFinanceiro = () => {
   const [games, setGames] = useState(gameStore.getGames())
@@ -27,7 +28,7 @@ const RelatorioFinanceiro = () => {
   // Set default dates based on period
   useEffect(() => {
     const today = new Date()
-    const todayStr = today.toISOString().split('T')[0]
+    const todayStr = getTodayBRDateString()
     
     switch (period) {
       case 'today':
@@ -36,12 +37,12 @@ const RelatorioFinanceiro = () => {
         break
       case 'week':
         const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
-        setStartDate(weekAgo.toISOString().split('T')[0])
+        setStartDate(formatDateToBRYMD(weekAgo))
         setEndDate(todayStr)
         break
       case 'month':
         const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
-        setStartDate(monthAgo.toISOString().split('T')[0])
+        setStartDate(formatDateToBRYMD(monthAgo))
         setEndDate(todayStr)
         break
       case 'all':
